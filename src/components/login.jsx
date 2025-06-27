@@ -16,7 +16,7 @@ import axios from 'axios';
 import useSignIn from 'react-auth-kit/hooks/useSignIn';
 import { useNavigate } from 'react-router-dom';
 
-const API =  'http://localhost:8090/auth';
+const API =  'http://146.190.115.47:8090/auth';
 
 const Login = ({ darkMode }) => {
   const navigate = useNavigate();

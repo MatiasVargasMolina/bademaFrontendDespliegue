@@ -163,7 +163,7 @@ const LectorArchivos = () => {
         formData.append("carpeta", carpetaSeleccionadaDialog.id); // por ejemplo: "obra", "ordenCompra", etc.
 
         try {
-            const response = await axios.post(`http://localhost:8090/badema/api/obra/subir/${obraId}`, formData, {
+            const response = await axios.post(`http://146.190.115.47:8090/badema/api/obra/subir/${obraId}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': authHeader
