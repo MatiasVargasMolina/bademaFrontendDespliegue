@@ -1,18 +1,17 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Dale más heap a Node
 ENV NODE_OPTIONS="--max_old_space_size=1024"
 
-# Copia sólo los package.json
-COPY frontend/package*.json ./
+# Copia package.json desde la raíz
+COPY package*.json ./
 RUN npm install
 
-# Copia el resto y build
+# Copia el resto del código y compila
 COPY . .
 RUN npm run build
 
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
-CMD ["nginx","-g","daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
