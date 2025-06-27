@@ -1,16 +1,17 @@
-# Etapa build
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copia solo los package.json de frontend
+# Dale más heap a Node
+ENV NODE_OPTIONS="--max_old_space_size=1024"
+
+# Copia sólo los package.json
 COPY frontend/package*.json ./
 RUN npm install
 
-# Copia el resto desde frontend y build
+# Copia el resto y build
 COPY frontend/. .
 RUN npm run build
 
-# Etapa producción
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
