@@ -1,13 +1,22 @@
 # Etapa de build con Node.js
 FROM node:18-alpine AS builder
 WORKDIR /app
-COPY frontend/package*.json ./
+
+# Copia package.json y package-lock.json desde la raíz
+COPY package*.json ./
 RUN npm ci
-COPY frontend/. .
+
+# Copia todo el código fuente (carpeta src, public, vite.config.js, etc.)
+COPY . .
+
+# Construye la aplicación
 RUN npm run build
 
 # Etapa de producción con Nginx
 FROM nginx:stable-alpine
+
+# Copia la carpeta de build (Vite genera 'dist')
 COPY --from=builder /app/dist /usr/share/nginx/html
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
