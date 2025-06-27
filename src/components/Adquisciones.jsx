@@ -113,7 +113,7 @@ const Adquisiciones = () => {
     });
     const fetchDetallesProveedor = async (proveedorId) => {
         try {
-            const response = await axios.get(`http://http://146.190.115.47:8090/badema/api/proveedor/id/${proveedorId}`, {
+            const response = await axios.get(`http://146.190.115.47:8090/badema/api/proveedor/id/${proveedorId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -133,12 +133,11 @@ const Adquisiciones = () => {
         severity: 'info'
     });
     const handleAddProveedor = () => {
-        const resp = axios.post(`http://http://146.190.115.47:8090/badema/api/proveedor/guardar`, newProveedor, {
+        const resp = axios.post(`http://146.190.115.47:8090/badema/api/proveedor/guardar`, newProveedor, {
             headers: {
                 Authorization: authHeader
             }
-        }
-        );
+        });
         console.log('Proveedor added:', resp.data);
         setRefreshPage(!refreshPage);
     };
@@ -324,7 +323,7 @@ const Adquisiciones = () => {
 
     const handleShowProveedorDetails = (proveedorId) => {
         const proveedor = proveedores.find(p => p.id === proveedorId);
-        const resp= axios.get(`http://http://146.190.115.47:8090/badema/api/proveedor/id/${proveedorId}`, {
+        const resp= axios.get(`http://146.190.115.47:8090/badema/api/proveedor/id/${proveedorId}`, {
             headers: {
                 Authorization: authHeader
             }
@@ -336,7 +335,7 @@ const Adquisiciones = () => {
     };
     const fetchPedidos = async () => {
         try {
-            const response = await axios.get(`http://http://146.190.115.47:8090/badema/api/pedido/pedidos/adquisiciones/${obraId}`, {
+            const response = await axios.get(`http://146.190.115.47:8090/badema/api/pedido/pedidos/adquisiciones/${obraId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -349,7 +348,7 @@ const Adquisiciones = () => {
     }
     const fetchProveedores = async () => {
         try {
-            const response = await axios.get(`http://http://146.190.115.47:8090/badema/api/proveedor/proveedores`, {
+            const response = await axios.get(`http://146.190.115.47:8090/badema/api/proveedor/proveedores`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -362,7 +361,7 @@ const Adquisiciones = () => {
     };
     const fetchProveedoresAsociados = async (materialId) => {
         try {
-            const response = await axios.get(`http://http://146.190.115.47:8090/badema/api/proveedormaterial/materialproveedor/${materialId}`, {
+            const response = await axios.get(`http://146.190.115.47:8090/badema/api/proveedormaterial/materialproveedor/${materialId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -384,7 +383,7 @@ const Adquisiciones = () => {
 
     const handleLinkProveedor = async (proveedorId) => {
 
-        const resp = await axios.post(`http://http://146.190.115.47:8090/badema/api/proveedormaterial/guardar/${selectedProveedor.id}/${selectedMaterial.id}`, { idMaterial: selectedMaterial.id, nombreMaterial: selectedMaterial.nombre, idProveedor: selectedProveedor.id, nombreProveedor: selectedProveedor.nombreProveedor, precio: precio, comentarios: comentariosTemp }, {
+        const resp = await axios.post(`http://146.190.115.47:8090/badema/api/proveedormaterial/guardar/${selectedProveedor.id}/${selectedMaterial.id}`, { idMaterial: selectedMaterial.id, nombreMaterial: selectedMaterial.nombre, idProveedor: selectedProveedor.id, nombreProveedor: selectedProveedor.nombreProveedor, precio: precio, comentarios: comentariosTemp }, {
             headers: {
                 Authorization: authHeader
             },
