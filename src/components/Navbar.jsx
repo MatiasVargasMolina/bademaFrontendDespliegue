@@ -74,7 +74,7 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
 const token = localStorage.getItem("_auth");
 
     const handleLogout = async () => {
-        axios.post("http://localhost:8090/auth/logout", null, {
+        axios.post("http://146.190.115.47:8090/auth/logout", null, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

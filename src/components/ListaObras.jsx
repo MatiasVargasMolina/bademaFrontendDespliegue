@@ -186,7 +186,7 @@ const ListaObras = () => {
         console.log(authHeader)
         const resp = await axios.post(
             // 1) Pasamos idObra como query param
-            `http://localhost:8090/auth/seleccionar-obra?idObra=${obraId}`,
+            `http://146.190.115.47:8090/auth/seleccionar-obra?idObra=${obraId}`,
             null,    // <-- body vacío
             {
                 headers: { Authorization: authHeader }
@@ -213,7 +213,7 @@ const ListaObras = () => {
         const fetchObras = async () => {
             try {
                 console.log('Fetching obras for userId:', userId);
-                const response = await axios.get(`http://localhost:8090/badema/api/obra/obras/${userId}`, {
+                const response = await axios.get(`http://146.190.115.47:8090/badema/api/obra/obras/${userId}`, {
                     headers: {
                         Authorization: authHeader
                     },

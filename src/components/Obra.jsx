@@ -73,7 +73,7 @@ const Obra = () => {
     const fetchData = async () => {
         try {
             const resp = await axios.get(
-                `http://localhost:8090/badema/api/obra/id/${obraId}`,
+                `http://146.190.115.47:8090/badema/api/obra/id/${obraId}`,
                 { headers: { Authorization: authHeader } }
             );
             const data = resp.data;
@@ -293,7 +293,7 @@ const handleAddHito = async () => {
     const idHito = Math.floor(Math.random() * 1000000);
     const fechaISO = nuevoHito.fecha.toISOString().split("T")[0];
 
-    const url = `http://localhost:8090/badema/api/hito/agregar?nombreHito=${encodeURIComponent(
+    const url = `http://146.190.115.47:8090/badema/api/hito/agregar?nombreHito=${encodeURIComponent(
       nuevoHito.nombre
     )}&fecha=${fechaISO}`;
 
@@ -382,7 +382,7 @@ const handleAddHito = async () => {
     const handleAddAsociado = async () => {
         try {
             console.log('Nuevo asociado:', { ...nuevoAsociado, idObra: parseInt(obraId, 10) });
-            const resp = await axios.post(`http://localhost:8090/badema/api/asociado/guardar/${obraId}`, { ...nuevoAsociado, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
+            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/asociado/guardar/${obraId}`, { ...nuevoAsociado, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
             console.log(resp.data);
             setOpenAsociadoDialog(false);
             setRefreshObras(prev => !prev);
@@ -395,7 +395,7 @@ const handleAddHito = async () => {
     const handleAddSubcontrato = async () => {
         try {
             console.log('Nuevo subcontrato:', { ...nuevoSubcontrato, idObra: parseInt(obraId, 10) });
-            const resp = await axios.post(`http://localhost:8090/badema/api/subcontrato/guardar/${obraId}`, { ...nuevoSubcontrato, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
+            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/subcontrato/guardar/${obraId}`, { ...nuevoSubcontrato, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
             console.log(resp.data);
             setOpenSubcontratoDialog(false);
             setRefreshObras(prev => !prev);
@@ -408,7 +408,7 @@ const handleAddHito = async () => {
         setOpenAdminDialog(true);
         try {
             const response = await axios.get(
-                `http://localhost:8090/badema/api/administrativo/obra/${obraId}`,
+                `http://146.190.115.47:8090/badema/api/administrativo/obra/${obraId}`,
                 { headers: { Authorization: authHeader } }
             );
             setUsuariosDisponibles(response.data);
@@ -424,7 +424,7 @@ const handleAddHito = async () => {
                 rol: nuevoAdmin.rol
             };
 
-            const resp = await axios.post(`http://localhost:8090/badema/api/administrativo/save`, payload, {
+            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/administrativo/save`, payload, {
                 headers: { Authorization: authHeader }
             });
             console.log("Administrativo guardado:", resp.data);
