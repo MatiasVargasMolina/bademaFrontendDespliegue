@@ -25,7 +25,7 @@ import { useParams } from 'react-router-dom';
 const GestionarPedidos = ({  }) => {
     const { obraId } = useParams();
     const raw = localStorage.getItem('_auth_state');
-
+    const [materiales, setMateriales] = useState([]);
     // 2. Lo parseas a objeto (asegurándote de que exista)
     let userId = null;
     if (raw) {
@@ -74,7 +74,7 @@ const GestionarPedidos = ({  }) => {
                     }))
                 };
                 console.log('Guardando pedido:', payload);
-                await axios.post('http://146.190.115.47:8090/badema/api/pedido/guardar', payload, { headers: { Authorization: authHeader } });
+                await axios.post('http://localhost:8090/badema/api/pedido/guardar', payload, { headers: { Authorization: authHeader } });
             }
             alert('Pedidos guardados correctamente');
         } catch (err) {

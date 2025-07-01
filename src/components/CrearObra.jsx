@@ -59,7 +59,7 @@ const CrearObra = () => {
         const authHeader = `${authType} ${token}`;
     useEffect(() => {
         if (id) {
-            axios.get(`http://146.190.115.47:8090/badema/api/obra/id/${id}`, {
+            axios.get(`http://localhost:8090/badema/api/obra/id/${id}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -122,7 +122,7 @@ const CrearObra = () => {
 
 
                 if (id) {
-                    await axios.put(`http://146.190.115.47:8090/badema/api/obra/actualizar/${id}`, {
+                    await axios.put(`http://localhost:8090/badema/api/obra/actualizar/${id}`, {
                         nombre: datosObra.nombre,
                         empresaContratista: datosObra.empresaContratista,
                         esPublico: datosObra.esPublico,
@@ -144,7 +144,7 @@ const CrearObra = () => {
                     navigate("/");
                 } else {
                     console.log("Creando nueva obra:", obraData);
-                    const response = await axios.post("http://146.190.115.47:8090/badema/api/obra/guardar", obraData, {
+                    const response = await axios.post("http://localhost:8090/badema/api/obra/guardar", obraData, {
                         headers: {
                             Authorization: authHeader
                         },

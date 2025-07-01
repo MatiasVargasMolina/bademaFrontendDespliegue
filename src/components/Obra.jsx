@@ -73,7 +73,7 @@ const Obra = () => {
     const fetchData = async () => {
         try {
             const resp = await axios.get(
-                `http://146.190.115.47:8090/badema/api/obra/id/${obraId}`,
+                `http://localhost:8090/badema/api/obra/id/${obraId}`,
                 { headers: { Authorization: authHeader } }
             );
             const data = resp.data;
@@ -226,7 +226,7 @@ const Obra = () => {
 
     const [nuevoAdmin, setNuevoAdmin] = useState({
         idUsuario: "",   // 👈 cadena vacía en vez de undefined
-        areaTrabajo: ""// Puedes mantener esto o eliminarlo ya que no se usará
+        rol: ""// Puedes mantener esto o eliminarlo ya que no se usará
     });
 
     const [nuevoAsociado, setNuevoAsociado] = useState({
@@ -284,19 +284,37 @@ const Obra = () => {
         setNuevoHito({ nombre: '', fecha: new Date() });
         setHitoEditando(null);
     };
+const handleAddHito = async () => {
+  if (
+    nuevoHito.nombre &&
+    nuevoHito.nombre.trim() !== "" &&
+    nuevoHito.fecha
+  ) {
+    const idHito = Math.floor(Math.random() * 1000000);
+    const fechaISO = nuevoHito.fecha.toISOString().split("T")[0];
 
-    const handleAddHito = async() => {
-        if (nuevoHito.nombre && nuevoHito.fecha) {
-            await axios.put(
-  `http://146.190.115.47:8090/badema/api/hito/agregar/${Math.floor(Math.random() * 1000000)}?nombreHito=${encodeURIComponent(nuevoHito.nombre)}&fecha=${encodeURIComponent(nuevoHito.fecha)}`,
-  {}, // cuerpo vacío
-  { headers: { Authorization: authHeader } }
-);
-        }
-    };
+    const url = `http://localhost:8090/badema/api/hito/agregar?nombreHito=${encodeURIComponent(
+      nuevoHito.nombre
+    )}&fecha=${fechaISO}`;
+
+    console.log("URL final:", url);
+
+    try {
+      await axios.put(url, {}, { headers: { Authorization: authHeader } });
+      setRefreshObras((prev) => !prev);
+      handleCloseHitoDialog();
+    } catch (err) {
+      console.error("Error al agregar hito:", err);
+      alert(err.response?.data?.message || err.message);
+    }
+  } else {
+    alert("Debes completar nombre y fecha.");
+  }
+};
+
 
     const handleAddAdmin = () => {
-        if (nuevoAdmin.nombre && nuevoAdmin.areaTrabajo) {
+        if (nuevoAdmin.nombre && nuevoAdmin.rol) {
             const nuevoId = obra.administrativos.length > 0
                 ? Math.max(...obra.administrativos.map(a => a.id)) + 1
                 : 1;
@@ -309,7 +327,7 @@ const Obra = () => {
                         id: nuevoId,
                         nombre: nuevoAdmin.nombre.split(' ')[0],
                         apellidos: nuevoAdmin.nombre.split(' ').slice(1).join(' ') || '',
-                        areaTrabajo: nuevoAdmin.areaTrabajo,
+                        areaTrabajo: nuevoAdmin.rol,
                         fechaAsignacion: new Date().toISOString().split('T')[0] // Fecha actual automática
                     }
                 ]
@@ -364,7 +382,7 @@ const Obra = () => {
     const handleAddAsociado = async () => {
         try {
             console.log('Nuevo asociado:', { ...nuevoAsociado, idObra: parseInt(obraId, 10) });
-            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/asociado/guardar/${obraId}`, { ...nuevoAsociado, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
+            const resp = await axios.post(`http://localhost:8090/badema/api/asociado/guardar/${obraId}`, { ...nuevoAsociado, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
             console.log(resp.data);
             setOpenAsociadoDialog(false);
             setRefreshObras(prev => !prev);
@@ -377,7 +395,7 @@ const Obra = () => {
     const handleAddSubcontrato = async () => {
         try {
             console.log('Nuevo subcontrato:', { ...nuevoSubcontrato, idObra: parseInt(obraId, 10) });
-            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/subcontrato/guardar/${obraId}`, { ...nuevoSubcontrato, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
+            const resp = await axios.post(`http://localhost:8090/badema/api/subcontrato/guardar/${obraId}`, { ...nuevoSubcontrato, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
             console.log(resp.data);
             setOpenSubcontratoDialog(false);
             setRefreshObras(prev => !prev);
@@ -390,7 +408,7 @@ const Obra = () => {
         setOpenAdminDialog(true);
         try {
             const response = await axios.get(
-                `http://146.190.115.47:8090/badema/api/administrativo/obra/${obraId}`,
+                `http://localhost:8090/badema/api/administrativo/obra/${obraId}`,
                 { headers: { Authorization: authHeader } }
             );
             setUsuariosDisponibles(response.data);
@@ -403,10 +421,10 @@ const Obra = () => {
             const payload = {
                 idObra: obraId,
                 idUsuario: nuevoAdmin.idUsuario,
-                rol: nuevoAdmin.areaTrabajo
+                rol: nuevoAdmin.rol
             };
 
-            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/administrativo/save`, payload, {
+            const resp = await axios.post(`http://localhost:8090/badema/api/administrativo/save`, payload, {
                 headers: { Authorization: authHeader }
             });
             console.log("Administrativo guardado:", resp.data);
@@ -414,7 +432,7 @@ const Obra = () => {
 
             // Actualiza lista y cierra diálogo
             setOpenAdminDialog(false);
-            setNuevoAdmin({ idUsuario: '', areaTrabajo: '' });
+            setNuevoAdmin({ idUsuario: '', rol: '' });
             setRefreshObras(prev => !prev); // o fetchAdministrativos() si es una función separada
         } catch (error) {
             const mensaje = error.response?.data?.message || error.message || "Error al guardar administrativo";
@@ -1250,10 +1268,13 @@ const Obra = () => {
                 <Dialog open={openAdminDialog} onClose={() => setOpenAdminDialog(false)}>
                     <DialogTitle>Agregar Administrativo Responsable</DialogTitle>
                     <DialogContent sx={{ minWidth: 400 }}>
+                        <FormControl fullWidth sx={{ mb: 2 }}>
+                            <InputLabel>Selecciona un usuario</InputLabel>
                         <Select
                             value={nuevoAdmin.idUsuario}
                             onChange={(e) => setNuevoAdmin({ ...nuevoAdmin, idUsuario: e.target.value })}
                             label="Usuario"
+                            placeholder="Selecciona un usuario"
                         >
                             {usuariosDisponibles.map((user) => (
                                 <MenuItem key={user.id} value={user.id}>
@@ -1261,11 +1282,12 @@ const Obra = () => {
                                 </MenuItem>
                             ))}
                         </Select>
+                        </FormControl>
                         <FormControl fullWidth sx={{ mb: 2 }}>
                             <InputLabel>Área de trabajo</InputLabel>
                             <Select
-                                value={nuevoAdmin.areaTrabajo}
-                                onChange={(e) => setNuevoAdmin({ ...nuevoAdmin, areaTrabajo: e.target.value })}
+                                value={nuevoAdmin.rol}
+                                onChange={(e) => setNuevoAdmin({ ...nuevoAdmin, rol: e.target.value })}
                                 label="Área de trabajo"
                             >
                                 {rolesAdministrativos.map((rol) => (
@@ -1329,8 +1351,8 @@ const Obra = () => {
                         <FormControl fullWidth sx={{ mb: 2 }}>
                             <InputLabel>Área de trabajo</InputLabel>
                             <Select
-                                value={nuevoAsociado.areaTrabajo}
-                                onChange={(e) => setNuevoAsociado({ ...nuevoAsociado, areaTrabajo: e.target.value })}
+                                value={nuevoAsociado.rol}
+                                onChange={(e) => setNuevoAsociado({ ...nuevoAsociado, rol: e.target.value })}
                                 label="Área de trabajo"
                             >
                                 {rolesAsociados.map((rol) => (

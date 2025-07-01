@@ -77,7 +77,7 @@ const OrdenDeCompra = () => {
     const authType = localStorage.getItem('_auth_type');  // 'Bearer'
     const token = localStorage.getItem('_auth');       // tu JWT
     const handleSelectMaterialPorProveedor = async(proveedorId,materialId) => {
-        const resp= await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/detalleProveedorMaterial/${proveedorId}/${materialId}`, {
+        const resp= await axios.get(`http://localhost:8090/badema/api/manejarAdquisiciones/detalleProveedorMaterial/${proveedorId}/${materialId}`, {
             headers: {     
                 Authorization: authHeader
             },
@@ -91,7 +91,7 @@ const OrdenDeCompra = () => {
     };
     const fetchMaterialesPorProveedor = async (proveedorId, materialId) => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/materialesPorProveedor/${proveedorId}/${obraId}/${materialId}`, {
+            const response = await axios.get(`http://localhost:8090/badema/api/manejarAdquisiciones/materialesPorProveedor/${proveedorId}/${obraId}/${materialId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -192,7 +192,7 @@ const OrdenDeCompra = () => {
     ]);
     const fetchPedidos = async () => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/pedidos/${obraId}`, {
+            const response = await axios.get(`http://localhost:8090/badema/api/manejarAdquisiciones/pedidos/${obraId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -205,7 +205,7 @@ const OrdenDeCompra = () => {
     }
     const fetchProveedores = async () => {
         try{
-            const resp= await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/materiales/${selectedPedido.id}/${selectedMaterial.id}`, {
+            const resp= await axios.get(`http://localhost:8090/badema/api/manejarAdquisiciones/materiales/${selectedPedido.id}/${selectedMaterial.id}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -421,7 +421,7 @@ const OrdenDeCompra = () => {
 
     // Manejar selección de material
     const handleSelectMaterial = async (material, pedido) => {
-        const resp = await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/materiales/${pedido.id}/${material.id}`, {
+        const resp = await axios.get(`http://localhost:8090/badema/api/manejarAdquisiciones/materiales/${pedido.id}/${material.id}`, {
             headers: {
                 Authorization: authHeader
             }

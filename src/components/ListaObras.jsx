@@ -41,7 +41,8 @@ import StraightenIcon from '@mui/icons-material/Straighten';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios"
 import useAuthUser from 'react-auth-kit/hooks/useAuthUser';
-
+import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const ListaObras = () => {
     const user = useAuthUser();
@@ -77,11 +78,115 @@ const ListaObras = () => {
         COMPLETADO: 'Completado',
         CANCELADO: 'Cancelado'
     };
+    const renderFiltros = () => (
+        <div style={{ paddingTop:"10px" }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                    label="Fecha de inicio"
+                    value={startDate ? new Date(startDate) : null}
+                    onChange={(newValue) => setStartDate(newValue)}
+                    slotProps={{
+                        textField: {
+                            fullWidth: true,
+                            sx: { mb: 1.5 },
+                            InputLabelProps: { style: { fontSize: '1rem' } },
+                            inputProps: { style: { fontSize: '1rem' } }
+                        }
+                    }}
+                />
+                <DatePicker
+                    label="Fecha de término"
+                    value={endDate}
+                    onChange={(newValue) => setEndDate(newValue)}
+                    slotProps={{
+                        textField: {
+                            fullWidth: true,
+                            sx: { mb: 1.5 },
+                            InputLabelProps: { style: { fontSize: '1rem' } },
+                            inputProps: { style: { fontSize: '1rem' } }
+                        }
+                    }}
+                />
+            </LocalizationProvider>
+
+            <TextField
+                label="M² mínimos"
+                type="number"
+                fullWidth
+                value={minMetros}
+                onChange={(e) => setMinMetros(e.target.value)}
+                InputProps={{
+                    endAdornment: <InputAdornment position="end">m²</InputAdornment>,
+                }}
+                sx={{ mb: 1.5 }}
+                InputLabelProps={{ style: { fontSize: '1rem' } }}
+                inputProps={{ style: { fontSize: '1rem' } }}
+            />
+
+            <TextField
+                label="M² máximos"
+                type="number"
+                fullWidth
+                value={maxMetros}
+                onChange={(e) => setMaxMetros(e.target.value)}
+                InputProps={{
+                    endAdornment: <InputAdornment position="end">m²</InputAdornment>,
+                }}
+                sx={{ mb: 1.5 }}
+                InputLabelProps={{ style: { fontSize: '1rem' } }}
+                inputProps={{ style: { fontSize: '1rem' } }}
+            />
+
+            <TextField
+                label="Empresa contratista"
+                fullWidth
+                value={empresaContratista}
+                onChange={(e) => setEmpresaContratista(e.target.value)}
+                sx={{ mb: 1.5 }}
+                InputLabelProps={{ style: { fontSize: '1rem' } }}
+                inputProps={{ style: { fontSize: '1rem' } }}
+            />
+
+            <TextField
+                select
+                label="Tipo de obra"
+                fullWidth
+                SelectProps={{ native: true }}
+                value={tipoObra}
+                onChange={(e) => setTipoObra(e.target.value)}
+                sx={{ mb: 1.5 }}
+                InputLabelProps={{ style: { fontSize: '1rem' } }}
+                inputProps={{ style: { fontSize: '1rem' } }}
+            >
+                <option value=""></option>
+                <option value="Pública">Pública</option>
+                <option value="Privada">Privada</option>
+            </TextField>
+
+            <TextField
+                select
+                label="Estado de la obra"
+                fullWidth
+                SelectProps={{ native: true }}
+                value={estadoObra}
+                onChange={(e) => setEstadoObra(e.target.value)}
+                sx={{ mb: 1.5 }}
+                InputLabelProps={{ style: { fontSize: '1rem' } }}
+                inputProps={{ style: { fontSize: '1rem' } }}
+            >
+                <option value=""></option>
+                {Object.values(ESTADOS_OBRA).map((estado) => (
+                    <option key={estado} value={estado}>{estado}</option>
+                ))}
+            </TextField>
+        </div>
+    );
+
     const seleccionarObra = async (obraId) => {
         console.log(authHeader)
         const resp = await axios.post(
             // 1) Pasamos idObra como query param
-            `http://146.190.115.47:8090/auth/seleccionar-obra?idObra=${obraId}`,
+            `http://localhost:8090/auth/seleccionar-obra?idObra=${obraId}`,
             null,    // <-- body vacío
             {
                 headers: { Authorization: authHeader }
@@ -108,11 +213,11 @@ const ListaObras = () => {
         const fetchObras = async () => {
             try {
                 console.log('Fetching obras for userId:', userId);
-                const response = await axios.get(`http://146.190.115.47:8090/badema/api/obra/obras/${userId}`, {
+                const response = await axios.get(`http://localhost:8090/badema/api/obra/obras/${userId}`, {
                     headers: {
                         Authorization: authHeader
                     },
-                   
+
                 });
                 console.log(response)
                 setObras(response.data);
@@ -285,193 +390,108 @@ const ListaObras = () => {
             {/* Segunda fila: Filtros y listado */}
             <Grid container spacing={3}>
                 {/* Columna de filtros */}
-                <Grid item xs={12} md={3}> {/* Cambiado de md=4 a md=3 */}
-                    <Paper elevation={0} sx={{
-                        p: 2, // Reducido de p=3
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '500px',
-                        width: '100%',
-                        maxWidth: '250px', // Reducido de 300px
-                        gap: 1.5 // Reducido de gap=2
-                    }}>
-                        <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
-                            Filtros
-                        </Typography>
-                        <Divider />
+                <Grid item xs={12} md={3}>
+                    {/* versión móvil: acordeón */}
+                    <Box sx={{ display: { xs: "block", md: "none" } }}>
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Typography>Filtros</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                {renderFiltros()}
 
-                        {/* Contenedor de filtros con scroll */}
-                        <Box sx={{
-                            overflowY: 'auto',
-                            flex: 1,
-                            mb: 1.5, // Reducido de mb=2
-                            pr: 1,
-                            '&::-webkit-scrollbar': {
-                                width: '4px', // Reducido de 6px
-                            },
-                            '&::-webkit-scrollbar-track': {
-                                background: '#f1f1f1',
-                                borderRadius: '10px',
-                            },
-                            '&::-webkit-scrollbar-thumb': {
-                                background: '#888',
-                                borderRadius: '10px',
-                            },
-                            '&::-webkit-scrollbar-thumb:hover': {
-                                background: '#555',
-                            },
-                            '& > *': {
-                                maxWidth: '100%',
-                                width: '100%'
-                            }
-                        }}>
-                            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                                <DatePicker
-                                    label="Fecha de inicio"
-                                    value={startDate ? new Date(startDate) : null}
-                                    onChange={(newValue) => {
-                                        setStartDate(newValue);
-                                    }}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            sx: {
-                                                mb: 1.5, // Reducido de mb=2
-                                                maxWidth: '100%'
-                                            },
-                                            InputLabelProps: { style: { fontSize: '1rem' } }, // Reducido de 1.1rem
-                                            inputProps: { style: { fontSize: '1rem' } } // Reducido de 1.1rem
-                                        }
-                                    }}
-                                />
-                                <DatePicker
-                                    label="Fecha de término"
-                                    value={endDate}
-                                    onChange={(newValue) => setEndDate(newValue)}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            sx: {
-                                                mb: 1.5, // Reducido de mb=2
-                                                maxWidth: '100%'
-                                            },
-                                            InputLabelProps: { style: { fontSize: '1rem' } }, // Reducido de 1.1rem
-                                            inputProps: { style: { fontSize: '1rem' } } // Reducido de 1.1rem
-                                        }
-                                    }}
-                                />
-                            </LocalizationProvider>
+                                {/* botones debajo del acordeón */}
+                                <Button
+                                    variant="outlined"
+                                    fullWidth
+                                    onClick={() => limpiarFiltros()}
+                                    sx={{ my: 1, py: 1, fontSize: '1rem' }}
+                                >
+                                    Limpiar filtros
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    fullWidth
+                                    onClick={handleAddObra}
+                                    sx={{ py: 1.5, fontSize: '1.1rem' }}
+                                >
+                                    Añadir Obra
+                                </Button>
+                            </AccordionDetails>
+                        </Accordion>
+                    </Box>
 
-                            <TextField
-                                label="M² mínimos"
-                                type="number"
-                                fullWidth
-                                value={minMetros}
-                                onChange={(e) => setMinMetros(e.target.value)}
-                                InputProps={{
-                                    endAdornment: <InputAdornment position="end">m²</InputAdornment>,
-                                }}
+                    {/* versión escritorio: panel fijo */}
+                    <Box sx={{ display: { xs: "none", md: "block" } }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                display: "flex",
+                                flexDirection: "column",
+                                height: "500px",
+                                width: "100%",
+                                maxWidth: "250px",
+                                gap: 1.5,
+                            }}
+                        >
+                            <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
+                                Filtros
+                            </Typography>
+                            <Divider />
+                            <Box
                                 sx={{
-                                    mb: 1.5, // Reducido de mb=2
-                                    maxWidth: '100%'
+                                    overflowY: "auto",
+                                    flex: 1,
+                                    mb: 1.5,
+                                    pr: 1,
+                                    "&::-webkit-scrollbar": {
+                                        width: "4px",
+                                    },
+                                    "&::-webkit-scrollbar-track": {
+                                        background: "#f1f1f1",
+                                        borderRadius: "10px",
+                                    },
+                                    "&::-webkit-scrollbar-thumb": {
+                                        background: "#888",
+                                        borderRadius: "10px",
+                                    },
+                                    "&::-webkit-scrollbar-thumb:hover": {
+                                        background: "#555",
+                                    },
+                                    "& > *": {
+                                        maxWidth: "100%",
+                                        width: "100%",
+                                    },
                                 }}
-                                InputLabelProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                                inputProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                            />
-                            <TextField
-                                label="M² máximos"
-                                type="number"
-                                fullWidth
-                                value={maxMetros}
-                                onChange={(e) => setMaxMetros(e.target.value)}
-                                InputProps={{
-                                    endAdornment: <InputAdornment position="end">m²</InputAdornment>,
-                                }}
-                                sx={{ mb: 1.5 }} // Reducido de mb=2
-                                InputLabelProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                                inputProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                            />
-
-                            <TextField
-                                label="Empresa contratista"
-                                fullWidth
-                                sx={{ mb: 1.5 }} // Reducido de mb=2
-                                value={empresaContratista}
-                                onChange={(e) => setEmpresaContratista(e.target.value)}
-                                InputLabelProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                                inputProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                            />
-
-                            <TextField
-                                select
-                                label="Tipo de obra"
-                                fullWidth
-                                SelectProps={{
-                                    native: true,
-                                }}
-                                value={tipoObra}
-                                onChange={(e) => setTipoObra(e.target.value)}
-                                sx={{ mb: 1.5 }} // Reducido de mb=2
-                                InputLabelProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                                inputProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
                             >
-                                <option value=""></option>
-                                <option value="Pública">Pública</option>
-                                <option value="Privada">Privada</option>
-                            </TextField>
-
-                            <TextField
-                                select
-                                label="Estado de la obra"
+                                {renderFiltros()}
+                            </Box>
+                            <Button
+                                variant="outlined"
                                 fullWidth
-                                value={estadoObra}
-                                onChange={(e) => setEstadoObra(e.target.value)}
-                                SelectProps={{
-                                    native: true,
-                                }}
-                                sx={{ mb: 1.5 }} // Reducido de mb=2
-                                InputLabelProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
-                                inputProps={{ style: { fontSize: '1rem' } }} // Reducido de 1.1rem
+                                onClick={() => limpiarFiltros()}
+                                sx={{ mb: 1.5, py: 1, fontSize: '1rem' }}
                             >
-                                <option value=""></option>
-                                {Object.values(ESTADOS_OBRA).map((estado) => (
-                                    <option key={estado} value={estado}>{estado}</option>
-                                ))}
-                            </TextField>
-                        </Box>
-
-                        <Button
-                            variant="outlined"
-                            fullWidth
-                            onClick={() => {
-                                limpiarFiltros()
-                            }}
-                            sx={{
-                                mb: 1.5, // Reducido de mb=2
-                                py: 1, // Reducido de py=1.5
-                                fontSize: '1rem' // Reducido de 1.1rem
-                            }}
-                        >
-                            Limpiar filtros
-                        </Button>
-
-                        <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            fullWidth
-                            onClick={handleAddObra}
-                            sx={{
-                                py: 1.5, // Reducido de py=2
-                                fontSize: '1.1rem' // Reducido de 1.2rem
-                            }}
-                        >
-                            Añadir Obra
-                        </Button>
-                    </Paper>
+                                Limpiar filtros
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                fullWidth
+                                onClick={handleAddObra}
+                                sx={{ py: 1.5, fontSize: '1.1rem' }}
+                            >
+                                Añadir Obra
+                            </Button>
+                        </Paper>
+                    </Box>
                 </Grid>
+
 
                 {/* Columna de listado (2/3) */}
                 <Grid item xs={12} md={8}>

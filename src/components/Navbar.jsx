@@ -18,7 +18,9 @@ import BademaLogoBlack from '../images/BademaBlack.png';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-
+import MenuIcon from '@mui/icons-material/Menu';
+import { Drawer } from '@mui/material';
+import axios from 'axios';
 const Navbar = ({ toggleDarkMode, darkMode }) => {
     const [helpAnchor, setHelpAnchor] = useState(null);
     const [settingsAnchor, setSettingsAnchor] = useState(null); // Estado para el popover de configuración
@@ -30,6 +32,8 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
     const selectedObraRol = localStorage.getItem("selectedObraRol");
     const email = authState?.email || "";
     const rol = selectedObraRol || "";
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
     // Datos simulados del usuario
     const [userData] = useState({
         name: "Juan Pérez",
@@ -67,10 +71,23 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
         console.log('Navegando a:', path);
         navigate(path);
     };
+const token = localStorage.getItem("_auth");
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        axios.post("http://localhost:8090/auth/logout", null, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        localStorage.removeItem("_auth");
+
+    // ✅ opcional: limpiar otras cosas si usas userState
+    localStorage.removeItem("user");  // solo si guardaste más info
+
+    // ✅ redirigir
+    window.location.href = "/login";  // o navigate("/login") si usas react-router
         // Aquí iría la lógica para cerrar sesión
-        console.log("Cerrando sesión...");
+        console.log("Cersion cerrada");
         handleSettingsClose();
     };
 
@@ -100,6 +117,17 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
                         height: "100%",
                     }}>
                         {/* Logo */}
+                        <IconButton
+                            color="inherit"
+                            edge="end"
+                            onClick={() => setDrawerOpen(true)}
+                            sx={{
+                                display: { xs: "block", md: "none" },
+                                color: 'text.primary'
+                            }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
                         <Box
                             onClick={() => handleNavigation("/")}
                             sx={{
@@ -108,7 +136,9 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
                                 cursor: "pointer",
                                 height: "100%",
                                 '& img': {
-                                    height: "80px",
+                                    height: { xs: 40, sm: 60, md: 80 },
+                                    width: "auto",
+                                    objectFit: "contain",
                                     transition: 'all 0.3s ease',
                                     '&:hover': {
                                         transform: 'scale(1.05)'
@@ -118,16 +148,16 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
                         >
                             <img
                                 src={darkMode ? BademaLogoBlack : BademaLogo}
-                                alt="Badema Logo"
-                            />
+                                alt="Badema Logo" />
                         </Box>
 
                         {/* Grupo de botones dinámicos */}
                         <Box sx={{
-                            display: "flex",
+
                             alignItems: "center",
                             gap: 3,
-                            height: "100%"
+                            height: "100%",
+                            display: { xs: "none", md: "flex" },
                         }}>
                             {/* Botones base */}
                             <Button
@@ -364,6 +394,61 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
                     </Typography>
                 </Box>
             </Popover>
+            {/* Drawer para el menú móvil */}
+            <Drawer
+                anchor="left"
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+            >
+                <Box sx={{ width: 250, p: 2 }}>
+                    <Button
+                        fullWidth
+                        onClick={() => { handleNavigation("/"); setDrawerOpen(false); }}
+                        sx={{ justifyContent: 'flex-start' }}
+                    >
+                        Ver Lista de Obras
+                    </Button>
+                    <Button
+                        fullWidth
+                        onClick={() => { handleNavigation("/crearObra"); setDrawerOpen(false); }}
+                        sx={{ justifyContent: 'flex-start' }}
+                    >
+                        Crear Obra
+                    </Button>
+                    {hasObraId && (
+                        <>
+                            <Button
+                                fullWidth
+                                onClick={() => { handleNavigation(`/obra/${params.obraId}`); setDrawerOpen(false); }}
+                                sx={{ justifyContent: 'flex-start' }}
+                            >
+                                Ver Obra
+                            </Button>
+                            <Button
+                                fullWidth
+                                onClick={() => { handleNavigation(`/adquisiciones/${params.obraId}`); setDrawerOpen(false); }}
+                                sx={{ justifyContent: 'flex-start' }}
+                            >
+                                Adquisiciones
+                            </Button>
+                            <Button
+                                fullWidth
+                                onClick={() => { handleNavigation(`/ordenDeCompra/${params.obraId}`); setDrawerOpen(false); }}
+                                sx={{ justifyContent: 'flex-start' }}
+                            >
+                                Manejando Adquisiciones
+                            </Button>
+                            <Button
+                                fullWidth
+                                onClick={() => { handleNavigation(`/seguimientoCompra/${params.obraId}`); setDrawerOpen(false); }}
+                                sx={{ justifyContent: 'flex-start' }}
+                            >
+                                Seguimiento de Compras
+                            </Button>
+                        </>
+                    )}
+                </Box>
+            </Drawer>
 
             {/* Animación CSS para las ondas */}
             <style>{`
