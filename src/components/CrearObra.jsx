@@ -17,11 +17,11 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useNavigate, useParams } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
-import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import useAuthUser from 'react-auth-kit/hooks/useAuthUser';
+import axiosInstance from '../axiosConfig';
 const CrearObra = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -52,14 +52,14 @@ const CrearObra = () => {
         { value: 4, label: 'En ejecución' },
         { value: 5, label: 'Finalizada' },
     ];
-        const authType = localStorage.getItem('_auth_type');  // 'Bearer'
-        const token = localStorage.getItem('_auth');       // tu JWT
+    const authType = localStorage.getItem('_auth_type');  // 'Bearer'
+    const token = localStorage.getItem('_auth');       // tu JWT
 
-        // Variable que los une
-        const authHeader = `${authType} ${token}`;
+    // Variable que los une
+    const authHeader = `${authType} ${token}`;
     useEffect(() => {
         if (id) {
-            axios.get(`http://146.190.115.47:8090/badema/api/obra/id/${id}`, {
+            axiosInstance.get(`/badema/api/obra/id/${id}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -117,12 +117,13 @@ const CrearObra = () => {
                     estado: datosObra.estado,
                     metrosCuadrados: datosObra.metrosCuadrados,
                     hitos: hitosMap,
-                    idUsuario: userId
+                    idUsuario: userId,
+                    direccion: datosObra.direccion, // Aseguramos que dirección sea un string
                 };
 
 
                 if (id) {
-                    await axios.put(`http://146.190.115.47:8090/badema/api/obra/actualizar/${id}`, {
+                    await axiosInstance.put(`/badema/api/obra/actualizar/${id}`, {
                         nombre: datosObra.nombre,
                         empresaContratista: datosObra.empresaContratista,
                         esPublico: datosObra.esPublico,
@@ -130,6 +131,7 @@ const CrearObra = () => {
                         fechaTermino: datosObra.fechaTermino?.toISOString().split('T')[0],
                         estado: datosObra.estado,
                         metrosCuadrados: datosObra.metrosCuadrados,
+                        
                     })
                     console.log("Obra actualizada:", {
                         nombre: datosObra.nombre,
@@ -144,7 +146,7 @@ const CrearObra = () => {
                     navigate("/");
                 } else {
                     console.log("Creando nueva obra:", obraData);
-                    const response = await axios.post("http://146.190.115.47:8090/badema/api/obra/guardar", obraData, {
+                    const response = await axiosInstance.post("/badema/api/obra/guardar", obraData, {
                         headers: {
                             Authorization: authHeader
                         },
@@ -235,6 +237,18 @@ const CrearObra = () => {
                                 />
                             </Grid>
                         </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <TextField
+                                required
+                                fullWidth
+                                id="direccionObra"
+                                label="Dirección de la obra"
+                                value={datosObra.direccion}
+                                onChange={(e) => handleChange('direccion', e.target.value)}
+                                disabled={isFieldDisabled('direccion')}
+                                placeholder="Ej: Av. Siempre Viva 742"
+                            />
+                        </Grid>
 
                         {/* Segunda fila: Tipo, Estado y Fechas */}
                         <Grid container item spacing={3}>
@@ -276,9 +290,10 @@ const CrearObra = () => {
                                     <InputLabel>Estado de la obra</InputLabel>
                                     <Select
                                         value={datosObra.estado}
-                                        onChange={(e) => handleChange('estado', e.target.value)}
+                                        onChange={(e) => setDatosObra({ ...datosObra, estado: e.target.value })}
                                         label="Estado de la obra"
                                         disabled={isFieldDisabled('estado')} // Este campo sigue editable
+                                        placeholder="Ej: Estudio de propuesta"
                                     >
                                         {estadosObra.map((estado) => (
                                             <MenuItem key={estado.value} value={estado.label}>

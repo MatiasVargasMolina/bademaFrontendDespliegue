@@ -41,12 +41,13 @@ import ListAlt from '@mui/icons-material/ListAlt';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import axios from 'axios';
+import axiosInstance from '../axiosConfig';
 const OrdenDeCompra = () => {
     const { obraId } = useParams();
     const navigate = useNavigate();
     const theme = useTheme();
-
+    const authState = JSON.parse(localStorage.getItem("_auth_state"));
+const userId = authState?.userId;
     // Estados para paginación
     const [expandedPedido, setExpandedPedido] = useState(null);
     const [selectedPedido, setSelectedPedido] = useState(null);
@@ -74,15 +75,17 @@ const OrdenDeCompra = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [estimatedDate, setEstimatedDate] = useState('');
     const [searchOrderItems, setSearchOrderItems] = useState('');
+    const [refreshPage, setRefreshPage] = useState(false);
     const authType = localStorage.getItem('_auth_type');  // 'Bearer'
     const token = localStorage.getItem('_auth');       // tu JWT
-    const handleSelectMaterialPorProveedor = async(proveedorId,materialId) => {
-        const resp= await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/detalleProveedorMaterial/${proveedorId}/${materialId}`, {
-            headers: {     
+    const handleSelectMaterialPorProveedor = async (proveedorId, materialId) => {
+        const resp = await axiosInstance.get(`/badema/api/manejarAdquisiciones/detalleProveedorMaterial/${proveedorId}/${materialId}`, {
+            headers: {
                 Authorization: authHeader
             },
         });
         console.log('Proveedor por material fetched:', resp.data);
+        setRefreshPage((prev) => !prev); // Forzar actualización de la página
         setProveedorPorMaterial(resp.data);
     };
     const handleSelectProveedor = (proveedor) => {
@@ -91,7 +94,7 @@ const OrdenDeCompra = () => {
     };
     const fetchMaterialesPorProveedor = async (proveedorId, materialId) => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/materialesPorProveedor/${proveedorId}/${obraId}/${materialId}`, {
+            const response = await axiosInstance.get(`/badema/api/manejarAdquisiciones/materialesPorProveedor/${obraId}/${proveedorId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -190,9 +193,10 @@ const OrdenDeCompra = () => {
             ordenCompra: []
         }
     ]);
+    
     const fetchPedidos = async () => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/pedidos/${obraId}`, {
+            const response = await axiosInstance.get(`/badema/api/manejarAdquisiciones/pedidos/${obraId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -204,8 +208,8 @@ const OrdenDeCompra = () => {
         }
     }
     const fetchProveedores = async () => {
-        try{
-            const resp= await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/materiales/${selectedPedido.id}/${selectedMaterial.id}`, {
+        try {
+            const resp = await axiosInstance.get(`/badema/api/manejarAdquisiciones/materiales/${selectedPedido.id}/${selectedMaterial.id}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -218,7 +222,8 @@ const OrdenDeCompra = () => {
     }
     useEffect(() => {
         fetchPedidos();
-    }, [])
+        console.log(orderItems)
+    }, [refreshPage])
 
     const [proveedores] = useState([
         {
@@ -342,63 +347,58 @@ const OrdenDeCompra = () => {
         return 'success';
     };
 
-    const handleFinalizarOrden = () => {
-        if (!selectedPedido || !selectedProvider) return;
+    const handleFinalizarOrden = async () => {
+  if (!selectedProvider || !selectedPedido) {
+    alert("Debe seleccionar un proveedor y un pedido para finalizar la orden.");
+    return;
+  }
 
-        // Calcular el total ordenado por material
-        const materialTotals = {};
-        orderItems.forEach(item => {
-            if (!materialTotals[item.materialId]) {
-                materialTotals[item.materialId] = 0;
-            }
-            materialTotals[item.materialId] += item.quantity;
-        });
-
-        // Actualizar cantidades compradas
-        const updatedPedidos = pedidos.map(pedido => {
-            if (pedido.id === selectedPedido.id) {
-                const updatedMateriales = pedido.materiales.map(material => {
-                    if (materialTotals[material.id]) {
-                        return {
-                            ...material,
-                            cantidadComprada: material.cantidadComprada + materialTotals[material.id]
-                        };
-                    }
-                    return material;
-                });
-
-                // Agregar a la orden de compra
-                const newOrdenCompra = orderItems.map(item => ({
-                    materialId: item.materialId,
-                    proveedorId: selectedProvider.id,
-                    proveedorNombre: selectedProvider.nombre,
-                    materialNombre: item.materialName,
-                    cantidad: item.quantity,
-                    precio: item.price,
-                    total: item.total,
-                    fechaEstimada: estimatedDate
-                }));
-
-                return {
-                    ...pedido,
-                    materiales: updatedMateriales,
-                    ordenCompra: [...pedido.ordenCompra, ...newOrdenCompra]
-                };
-            }
-            return pedido;
-        });
-
-        setPedidos(updatedPedidos);
-        setOrderItems([]);
-        setEstimatedDate('');
-        setOpenDialog(false);
+  try {
+    const dataToSend = {
+      idProveedor: selectedProvider.idProveedor || selectedProvider.id,
+      idResponsable: userId,  // aquí podrías leerlo de tu auth si quieres
+      fechaEntrega: estimatedDate,
+      items: orderItems.map(item => ({
+        idMaterial: item.materialId,
+        nombreMaterial: item.nombreMaterial,
+        cantidad: item.cantidad,
+        total: item.precio,
+        observaciones: item.observaciones
+      }))
     };
+
+    console.log("Enviando orden compra JSON:", dataToSend);
+
+    await axiosInstance.post(
+      `/badema/api/ordencompra/guardar`,
+      dataToSend,
+      {
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    alert("Orden de compra generada exitosamente.");
+    setOpenDialog(false);
+    setOrderItems([]);
+    setEstimatedDate('');
+    setCurrentStep(1);
+    setSelectedProvider(null);
+    setSelectedMaterial(null);
+
+  } catch (error) {
+    console.error("Error generando orden de compra:", error);
+    alert("Hubo un problema al generar la orden de compra.");
+  }
+};
 
     const handleWorkWithProvider = () => {
         const provider = selectedProveedor;
         setSelectedProvider(provider);
         console.log(selectedMaterial)
-        fetchMaterialesPorProveedor(provider.idProveedor,selectedMaterial.idMaterial);
+        fetchMaterialesPorProveedor(provider.idProveedor, selectedMaterial.idMaterial);
         setCurrentStep(2);
         setOrderItems([]);
         setQuantityToOrder(0);
@@ -421,7 +421,7 @@ const OrdenDeCompra = () => {
 
     // Manejar selección de material
     const handleSelectMaterial = async (material, pedido) => {
-        const resp = await axios.get(`http://146.190.115.47:8090/badema/api/manejarAdquisiciones/materiales/${pedido.id}/${material.id}`, {
+        const resp = await axiosInstance.get(`/badema/api/manejarAdquisiciones/materiales/${pedido.id}/${material.id}`, {
             headers: {
                 Authorization: authHeader
             }
@@ -502,34 +502,50 @@ const OrdenDeCompra = () => {
         );
 
         // Manejar agregar a la orden
-        const handleAddToOrder = (material) => {
-            if (quantityToOrder <= 0 || quantityToOrder > getPendingQuantity(material)) {
-                alert('Cantidad inválida');
-                return;
+        const handleAddToOrder = async (material) => {
+
+            try {
+                console.log(selectedProvider)
+                console.log(material)
+                if(quantityToOrder>material.cantidad) {
+                    alert("No puedes ordenar más de lo que falta por comprar.");
+                    return;
+                }
+                console.log("Cantidad a ordenar:", quantityToOrder);
+                console.log("precio del proveedor:", proveedorPorMaterial.precio);
+                setOrderItems([...orderItems, { nombreMaterial: material.nombreMaterial, cantidad: quantityToOrder, observaciones: observations, precio: proveedorPorMaterial.precio * quantityToOrder, materialId: proveedorPorMaterial.idMaterial }]);
+                console.log(orderItems)
+                setQuantityToOrder(0);
+                setObservations('');
+                setMaterialesPorProveedor(prev =>
+                    prev.map(item =>
+                        item.idMaterial === proveedorPorMaterial.idMaterial
+                            ? { ...item, cantidadFaltante: material.cantidad - quantityToOrder }
+                            : item
+                    )
+                );
+
+            } catch (e) {
+                console.error("Error construyendo ítem orden:", e);
+                alert("Error agregando ítem a la orden.");
             }
-
-            const newItem = {
-                materialId: material.id,
-                materialName: material.nombre,
-                quantity: quantityToOrder,
-                price: selectedProvider.precio,
-                total: `S/ ${(parseFloat(selectedProvider.precio.replace('S/ ', '')) * quantityToOrder)}`,
-                specifications: material.especificaciones,
-                observations: observations
-            };
-
-            setOrderItems([...orderItems, newItem]);
-            setQuantityToOrder(0);
-            setObservations('');
-            // Forzar actualización del material seleccionado
-            setSelectedMaterial({ ...material });
         };
 
         // Manejar remover de la orden
-        const handleRemoveFromOrder = (index) => {
+        const handleRemoveFromOrder = (index, orderdeleted) => {
             const newItems = [...orderItems];
             newItems.splice(index, 1);
             setOrderItems(newItems);
+            setMaterialesPorProveedor(prev =>
+                prev.map(item =>
+                    item.idMaterial === orderdeleted.materialId
+                        ? {
+                            ...item,
+                            cantidadFaltante: (item.cantidadFaltante ?? item.cantidadRequerida) + orderdeleted.cantidad
+                        }
+                        : item
+                )
+            );
         };
 
         return (
@@ -565,7 +581,7 @@ const OrdenDeCompra = () => {
 
                             <List sx={{ maxHeight: 500, overflow: 'auto' }}>
                                 {materialesPorProveedor
-                                    
+
                                     .map(material => (
                                         <ListItem
                                             key={material.id}
@@ -574,8 +590,8 @@ const OrdenDeCompra = () => {
                                             selected={selectedMaterial?.id === material.id}
                                         >
                                             <ListItemText
-                                                primary={material.nombre}
-                                                secondary={`Pedido: ${material.nombrePedido} | Faltan comprar ${getPendingQuantity(material)} de ${material.cantidad}`}
+                                                primary={material.nombreMaterial}
+                                                secondary={`Pedido: ${material.nombrePedido} | Faltan comprar ${material.cantidadFaltante} de ${material.cantidadRequerida}`}
                                             />
                                         </ListItem>
                                     ))}
@@ -598,35 +614,79 @@ const OrdenDeCompra = () => {
 
                             {selectedMaterial && (
                                 <>
+                                    {/* Nombre del material */}
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                        {proveedorPorMaterial?.nombreMaterial || 'Nombre no disponible'}
+                                    </Typography>
+
+                                    {/* Lista de especificaciones */}
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                        Especificaciones técnicas:
+                                    </Typography>
+
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: 1,
+                                        mb: 2,
+                                        maxHeight: 150,
+                                        overflow: 'auto'
+                                    }}>
+                                        {Object.entries(proveedorPorMaterial?.nuevasEspecificaciones || {})
+                                            .filter(([key]) =>
+                                                key.toLowerCase() !== "id" &&
+                                                key.toLowerCase() !== "idproveedormaterial"
+                                            )
+                                            .map(([key, value]) => (
+                                                <Chip
+                                                    key={key}
+                                                    label={`${key}: ${value.valor} (${value.vigente ? 'vigente' : 'no vigente'})`}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    sx={{
+                                                        borderRadius: 1,
+                                                        backgroundColor: 'background.paper',
+                                                        borderColor: 'divider',
+                                                        color: 'text.primary',
+                                                    }}
+                                                />
+                                            ))}
+
+
+                                    </Box>
+
+                                    <Divider sx={{ my: 2 }} />
+
+                                    {/* Información del proveedor */}
                                     <Card variant="outlined" sx={{ mb: 3 }}>
 
-                                            <CardContent>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                                    {selectedProvider.nombreProveedor}
+                                        <CardContent>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                                {proveedorPorMaterial?.nombreProveedor}
+                                            </Typography>
+
+                                            <Stack spacing={1}>
+                                                <Typography variant="body2">
+                                                    <Payment fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                                    <strong>Condición:</strong> {proveedorPorMaterial?.condicion}
                                                 </Typography>
 
-                                                <Stack spacing={1}>
-                                                    <Typography variant="body2">
-                                                        <Payment fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                                                        <strong>Condición:</strong> {selectedProvider.condiciones}
-                                                    </Typography>
+                                                <Typography variant="body2">
+                                                    <AttachMoney fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                                    <strong>Precio:</strong> {proveedorPorMaterial?.precio} por unidad
+                                                </Typography>
 
-                                                    <Typography variant="body2">
-                                                        <AttachMoney fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                                                        <strong>Precio:</strong> {selectedProvider.precio} por unidad
-                                                    </Typography>
+                                                <Typography variant="body2">
+                                                    <Block fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                                    <strong>Restricciones:</strong> {proveedorPorMaterial?.restricciones}
+                                                </Typography>
 
-                                                    <Typography variant="body2">
-                                                        <Block fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                                                        <strong>Restricciones:</strong> {selectedProvider.restricciones}
-                                                    </Typography>
-
-                                                    <Typography variant="body2">
-                                                        <ChatBubbleOutline fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                                                        <strong>Comentarios:</strong> {selectedProvider.comentarios || 'Sin comentarios'}
-                                                    </Typography>
-                                                </Stack>
-                                            </CardContent>
+                                                <Typography variant="body2">
+                                                    <ChatBubbleOutline fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                                    <strong>Comentarios:</strong> {proveedorPorMaterial?.comentarios || 'Sin comentarios'}
+                                                </Typography>
+                                            </Stack>
+                                        </CardContent>
                                     </Card>
 
                                     <TextField
@@ -634,7 +694,7 @@ const OrdenDeCompra = () => {
                                         label="Cantidad a ordenar"
                                         type="number"
                                         value={quantityToOrder}
-                                        onChange={(e) => setQuantityToOrder(parseInt(e.target.value) || 0)}
+                                        onChange={(e) => setQuantityToOrder(parseInt(e.target.value))}
                                         sx={{ mb: 2 }}
                                         inputProps={{
                                             min: 1,
@@ -687,7 +747,6 @@ const OrdenDeCompra = () => {
 
                             <List sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
                                 {orderItems
-                                    .filter(item => item.materialName.toLowerCase().includes(searchOrderItems.toLowerCase()))
                                     .slice(0, 3) // Mostrar solo 3 elementos a la vez
                                     .map((item, index) => (
                                         <Card key={index} variant="outlined" sx={{ mb: 1 }}>
@@ -695,37 +754,28 @@ const OrdenDeCompra = () => {
                                                 <IconButton
                                                     size="small"
                                                     sx={{ position: 'absolute', top: 4, right: 4 }}
-                                                    onClick={() => handleRemoveFromOrder(index)}
+                                                    onClick={() => handleRemoveFromOrder(index,item)}
                                                 >
                                                     <Close fontSize="small" />
                                                 </IconButton>
 
                                                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                                    {item.materialName}
+                                                    {item.nombreMaterial}
                                                 </Typography>
 
                                                 <Typography variant="body2" sx={{ mt: 1 }}>
-                                                    <strong>Cantidad:</strong> {item.quantity}
+                                                    <strong>Cantidad:</strong> {item.cantidad}
                                                 </Typography>
 
                                                 <Typography variant="body2">
-                                                    <strong>Total:</strong> {item.total}
+                                                    <strong>Total:</strong> {item.precio}
                                                 </Typography>
 
-                                                <Typography variant="body2" sx={{ mt: 1 }}>
-                                                    <strong>Especificaciones:</strong>
-                                                </Typography>
-                                                <Box component="ul" sx={{ pl: 2, mb: 1, fontSize: '0.75rem' }}>
-                                                    {item.specifications.map((spec, i) => (
-                                                        <li key={i}>{spec}</li>
-                                                    ))}
-                                                </Box>
-
-                                                {item.observations && (
+                                                
                                                     <Typography variant="body2" sx={{ fontStyle: 'italic', fontSize: '0.75rem' }}>
-                                                        <strong>Obs:</strong> {item.observations}
+                                                        <strong>Obs:</strong> {item.observaciones}
                                                     </Typography>
-                                                )}
+                                                
                                             </CardContent>
                                         </Card>
                                     ))}
@@ -859,7 +909,7 @@ const OrdenDeCompra = () => {
                                                                         <ListItemText
                                                                             primary={material.nombre}
                                                                             primaryTypographyProps={{ fontSize: '0.875rem' }}
-                                                                            secondary={`${material.cantidadComprada}/${material.cantidad}`}
+
                                                                             secondaryTypographyProps={{
                                                                                 color: material.cantidadComprada === material.cantidad
                                                                                     ? 'success.main'
@@ -1069,9 +1119,21 @@ const OrdenDeCompra = () => {
                                                                         color: 'text.secondary'
                                                                     }
                                                                 }}>
-                                                                    {(proveedor.especificaciones || ['No especificado']).map((espec, i) => (
-                                                                        <li key={i}>{espec}</li>
-                                                                    ))}
+                                                                    {(Object.keys(proveedor?.nuevasEspecificaciones || {}).length > 0
+                                                                        ? Object.entries(proveedor.nuevasEspecificaciones)
+                                                                            .filter(([key]) =>
+                                                                                key.toLowerCase() !== 'id' &&
+                                                                                key.toLowerCase() !== 'materialid' &&
+                                                                                key.toLowerCase() !== 'idproveedormaterial'
+                                                                            )
+                                                                            .map(([key, value]) => (
+                                                                                <li key={key}>
+                                                                                    {`${key}: ${value?.valor ?? 'No especificado'} (${value?.vigente ? 'vigente' : 'no vigente'})`}
+                                                                                </li>
+                                                                            ))
+                                                                        : [<li key="0">No especificado</li>]
+                                                                    )}
+
                                                                 </Box>
                                                                 <Typography variant="body2" sx={{ mt: 1 }}>
                                                                     <ChatBubbleOutline fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />

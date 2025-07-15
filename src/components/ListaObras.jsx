@@ -39,10 +39,10 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import { useNavigate } from 'react-router-dom';
-import axios from "axios"
 import useAuthUser from 'react-auth-kit/hooks/useAuthUser';
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import axiosInstance from '../axiosConfig';
 
 const ListaObras = () => {
     const user = useAuthUser();
@@ -184,9 +184,9 @@ const ListaObras = () => {
 
     const seleccionarObra = async (obraId) => {
         console.log(authHeader)
-        const resp = await axios.post(
+        const resp = await axiosInstance.post(
             // 1) Pasamos idObra como query param
-            `http://146.190.115.47:8090/auth/seleccionar-obra?idObra=${obraId}`,
+            `/auth/seleccionar-obra?idObra=${obraId}`,
             null,    // <-- body vacío
             {
                 headers: { Authorization: authHeader }
@@ -213,7 +213,7 @@ const ListaObras = () => {
         const fetchObras = async () => {
             try {
                 console.log('Fetching obras for userId:', userId);
-                const response = await axios.get(`http://146.190.115.47:8090/badema/api/obra/obras/${userId}`, {
+                const response = await axiosInstance.get(`/badema/api/obra/obras/${userId}`, {
                     headers: {
                         Authorization: authHeader
                     },

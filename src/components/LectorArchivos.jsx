@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -41,10 +41,14 @@ import {
     Search
 } from '@mui/icons-material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { useNavigate, useParams } from "react-router-dom";
-import axios from 'axios';
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import axiosInstance from '../axiosConfig';
 const LectorArchivos = () => {
-    const { obraId } = useParams();
+    const [searchParams] = useSearchParams();
+    const obraId = searchParams.get('obraId');
+    const idOrden = searchParams.get('idOrden');
+    const idSeguimiento = searchParams.get('idSeguimiento');
+    const idDetalleOrdenCompra = searchParams.get('idDetalleOrdenCompra');
     const authType = localStorage.getItem('_auth_type');  // e.g. 'Bearer'
     const token = localStorage.getItem('_auth');       // tu JWT
     const authHeader = `${authType} ${token}`;
@@ -60,6 +64,9 @@ const LectorArchivos = () => {
     const [carpetaSeleccionadaDialog, setCarpetaSeleccionadaDialog] = useState(null);
     const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [archivos, setArchivos] = useState([]);
+    const [archivoVistaPrevia, setArchivoVistaPrevia] = useState(null);
+
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
@@ -67,6 +74,30 @@ const LectorArchivos = () => {
     });
 
     // Datos de ejemplo para las carpetas
+    const [documentosDeObra, setDocumentosDeObra] = useState([])
+    const cargarVistaPrevia = async (archivo) => {
+        try {
+            const response = await axiosInstance.get(
+                `/badema/api/seguimiento/guias/archivos/pdf/${archivo.id}`,
+                {
+                    headers: {
+                        Authorization: authHeader
+                    },
+                    responseType: 'blob'
+                }
+            );
+            const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            setArchivoVistaPrevia({ url, nombre: archivo.nombreArchivo });
+        } catch (err) {
+            console.error('Error al cargar vista previa:', err);
+            setSnackbar({
+                open: true,
+                message: 'No se pudo cargar vista previa del archivo.',
+                severity: 'error'
+            });
+        }
+    };
+
     const carpetas = [
         {
             id: 'obra',
@@ -140,10 +171,12 @@ const LectorArchivos = () => {
 
     const handleSeleccionarCarpetaDialog = (carpeta) => {
         setCarpetaSeleccionadaDialog(carpeta);
+        console.log("Carpeta seleccionada:", carpeta);
     };
 
     const handleFileChange = (event) => {
         setArchivoSeleccionado(event.target.files[0]);
+
     };
 
     const handleSubirPDF = async () => {
@@ -156,22 +189,67 @@ const LectorArchivos = () => {
             return;
         }
 
+        // Si es carpeta "recepcion", necesitamos el idDetalleOrdenCompra
+        if (carpetaSeleccionadaDialog.id === 'recepcion' && !idDetalleOrdenCompra) {
+            setSnackbar({
+                open: true,
+                message: 'No se puede subir guía sin idDetalleOrdenCompra',
+                severity: 'error'
+            });
+            return;
+        }
+
         setLoading(true);
 
         const formData = new FormData();
         formData.append("file", archivoSeleccionado);
-        formData.append("carpeta", carpetaSeleccionadaDialog.id); // por ejemplo: "obra", "ordenCompra", etc.
 
         try {
-            console.log(authHeader)
-            const response = await axios.post(`http://146.190.115.47:8090/badema/api/obra/subir/${obraId}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': authHeader
-                }
-            });
+            let response;
 
-            if (response.status !== 200) {
+            if (carpetaSeleccionadaDialog.id === 'recepcion') {
+                // Enviar a la API de guías, con idDetalleOrdenCompra en la ruta
+                response = await axiosInstance.post(
+                    `/badema/api/seguimiento/guias/subir/${idDetalleOrdenCompra}`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            Authorization: authHeader
+                        }
+                    }
+                );
+            }
+            if (carpetaSeleccionadaDialog.id === 'ordenCompra') {
+                // Actualizar la lista de documentos de obra
+                const response = await axiosInstance.post(
+                    `/badema/api/ordencompra/subir/${idOrden}`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            Authorization: authHeader
+                        }
+                    }
+                );
+                console.log("Respuesta de subir archivo a orden de compra:", response.data);
+            }
+            if (carpetaSeleccionadaDialog.id === 'obra') {
+                // Actualizar la lista de documentos de obra
+                const response = await axiosInstance.post(
+                    `/badema/api/obra/subir/${obraId}`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            Authorization: authHeader
+                        }
+                    }
+                );
+                console.log("Respuesta de subir archivo a obra:", response.data);
+            }
+
+            if (response.status !== 200 && response.status !== 201) {
                 throw new Error(response.data || "Error al subir archivo");
             }
 
@@ -181,6 +259,11 @@ const LectorArchivos = () => {
                 severity: 'success'
             });
             setOpenDialog(false);
+
+            if (carpetaSeleccionadaDialog.id === 'recepcion') {
+                await handleSeleccionarCarpeta(carpetaSeleccionadaDialog);
+            }
+
         } catch (error) {
             const mensaje = error.response?.data || error.message || "Error inesperado";
             setSnackbar({
@@ -188,26 +271,62 @@ const LectorArchivos = () => {
                 message: `Error al subir archivo: ${mensaje}`,
                 severity: 'error'
             });
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
     };
 
+
+
     // Filtrar y paginar archivos
-    const archivosFiltrados = carpetaSeleccionada
-        ? archivosPorCarpeta[carpetaSeleccionada.id]?.filter(archivo =>
-            archivo.nombre.toLowerCase().includes(busqueda.toLowerCase())
-        )
-        : [];
+    const archivosFiltrados = documentosDeObra
+        .filter(a => a.nombre.toLowerCase().includes(busqueda.toLowerCase()));
 
     const archivosPaginados = archivosFiltrados.slice(
         (paginaArchivos - 1) * archivosPorPagina,
         paginaArchivos * archivosPorPagina
     );
 
-    const handleSeleccionarCarpeta = (carpeta) => {
+    const handleSeleccionarCarpeta = async (carpeta) => {
         setCarpetaSeleccionada(carpeta);
+        console.log(carpeta)
+        if (carpeta.id === 'recepcion') {
+            const response = await axiosInstance.get(
+                `/badema/api/seguimiento/guias/archivos/${idDetalleOrdenCompra}`,
+                {
+                    headers: {
+                        Authorization: authHeader
+                    }
+                }
+            );
+            setArchivos(response.data);
+            console.log("Archivos de recepción:", response.data);
+        }
+        if (carpeta.id === 'ordenCompra') {
+            const response = await axiosInstance.get(
+                `/badema/api/ordencompra/archivos/${idOrden}`,
+                {
+                    headers: {
+                        Authorization: authHeader
+                    }
+                }
+            );
+            setArchivos(response.data);
+            console.log("Archivos de orden de compra:", response.data);
+        }
+        if (carpeta.id === 'obra') {
+            const response = await axiosInstance.get(
+                `/badema/api/obra/archivos/${obraId}`,
+                {
+                    headers: {
+                        Authorization: authHeader
+                    }
+                }
+            );
+            setArchivos(response.data);
+            console.log("Archivos de obra:", response.data);
+        }
+
         setPaginaArchivos(1);
         setBusqueda('');
     };
@@ -423,14 +542,50 @@ const LectorArchivos = () => {
                                         color: theme.palette.text.primary // Color de texto principal
                                     }}>
                                         {carpetaSeleccionada
-                                            ? `Visualizando: ${archivosPaginados[0]?.nombre || 'Seleccione un archivo'}`
+                                            ? ` || 'Seleccione un archivo'}`
                                             : 'Seleccione una carpeta para comenzar'}
                                     </Typography>
                                     <Typography sx={{
                                         textAlign: 'center',
                                         color: theme.palette.text.secondary // Color de texto secundario
                                     }}>
-                                        (Vista previa del documento PDF)
+                                        <Box
+                                            sx={{
+                                                flex: 1,
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                bgcolor: theme.palette.background.default,
+                                                p: 2,
+                                                overflow: 'auto',
+                                                '&::-webkit-scrollbar': {
+                                                    width: '6px'
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    backgroundColor: theme.palette.action.selected,
+                                                    borderRadius: '3px'
+                                                }
+                                            }}
+                                        >
+                                            {archivoVistaPrevia ? (
+                                                <Box sx={{ width: '100%' }}>
+                                                    <Typography variant="h6" sx={{ textAlign: 'center', mb: 2 }}>
+                                                        Visualizando: {archivoVistaPrevia.nombre}
+                                                    </Typography>
+                                                    <iframe
+                                                        src={archivoVistaPrevia.url}
+                                                        title="Vista previa PDF"
+                                                        width="100%"
+                                                        height="600px"
+                                                        style={{ border: 'none' }}
+                                                    />
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" sx={{ textAlign: 'center' }}>
+                                                    Selecciona un archivo PDF para previsualizarlo.
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </Typography>
                                 </Paper>
                             </Box>
@@ -496,10 +651,11 @@ const LectorArchivos = () => {
                                             borderRadius: '3px'
                                         }
                                     }}>
-                                        {archivosPaginados.length > 0 ? (
-                                            archivosPaginados.map((archivo) => (
+                                        {archivos.length > 0 ? (
+                                            archivos.map((archivo) => (
                                                 <ListItem
                                                     key={archivo.id}
+                                                    onClick={() => cargarVistaPrevia(archivo)}
                                                     button
                                                     sx={{
                                                         borderBottom: '1px solid',
@@ -513,8 +669,8 @@ const LectorArchivos = () => {
                                                     }}
                                                 >
                                                     <ListItemText
-                                                        primary={archivo.nombre}
-                                                        secondary={`Subido: ${archivo.fecha}`}
+                                                        primary={archivo.nombreArchivo}
+                                                        secondary={`Subido: ${archivo.fechaSubida}`}
                                                         primaryTypographyProps={{
                                                             variant: 'body2',
                                                             noWrap: true

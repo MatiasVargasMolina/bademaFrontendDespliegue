@@ -12,7 +12,8 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Grid
+    Grid,
+    Alert
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -20,21 +21,29 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import axios from 'axios';
-import { useParams } from 'react-router-dom';
-const GestionarPedidos = ({  }) => {
+import Snackbar from '@mui/material/Snackbar';
+import { useParams, useNavigate } from 'react-router-dom';
+import axiosInstance from '../axiosConfig';
+
+const GestionarPedidos = ({ }) => {
+    const navigate = useNavigate();
     const { obraId } = useParams();
     const raw = localStorage.getItem('_auth_state');
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'info'
+    });
     const [materiales, setMateriales] = useState([]);
     // 2. Lo parseas a objeto (asegurándote de que exista)
     let userId = null;
     if (raw) {
-    try {
-        const auth = JSON.parse(raw);
-        userId = auth.userId;
-    } catch (e) {
-        console.error('Error parseando _auth_state:', e);
-    }
+        try {
+            const auth = JSON.parse(raw);
+            userId = auth.userId;
+        } catch (e) {
+            console.error('Error parseando _auth_state:', e);
+        }
     }
     const authType = localStorage.getItem('_auth_type');  // e.g. 'Bearer'
     const token = localStorage.getItem('_auth');       // tu JWT
@@ -60,7 +69,7 @@ const GestionarPedidos = ({  }) => {
             // Enviamos cada pedido por separado
             for (let pedido of pedidos) {
                 const payload = {
-                    idResponsable: userId ,
+                    idResponsable: userId,
                     idObra: pedido.idObra,
                     estado: mapEstado(pedido.estado),
                     fechaEstimadaLlegada: formatFecha(pedido.fechaEsperada),
@@ -74,9 +83,16 @@ const GestionarPedidos = ({  }) => {
                     }))
                 };
                 console.log('Guardando pedido:', payload);
-                await axios.post('http://146.190.115.47:8090/badema/api/pedido/guardar', payload, { headers: { Authorization: authHeader } });
+                await axiosInstance.post('/badema/api/pedido/guardar', payload, { headers: { Authorization: authHeader } });
             }
-            alert('Pedidos guardados correctamente');
+            setSnackbar({
+                open: true,
+                message: "Pedido creado correctamente",
+                severity: "success"
+            });
+            setTimeout(() => {
+                navigate(`/adquisiciones/${obraId}`);
+            }, 2000);
         } catch (err) {
             console.error(err);
             alert('Error al guardar pedidos');
@@ -465,7 +481,7 @@ const GestionarPedidos = ({  }) => {
                                                             required={index < 3}
                                                             error={index < 3 && !esp.trim()}
                                                         />
-                                                        
+
                                                         {index >= 3 && (
                                                             <IconButton
                                                                 onClick={() => {
@@ -649,6 +665,20 @@ const GestionarPedidos = ({  }) => {
                         </Button>
                     </Box>
                 </Paper>
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={3000}
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Alert
+                        severity={snackbar.severity}
+                        sx={{ width: '100%' }}
+                        onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    >
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
             </Box>
         </LocalizationProvider>
     );

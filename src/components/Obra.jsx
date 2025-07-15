@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../axiosConfig';
 import {
     Box,
     Button,
@@ -21,7 +21,7 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem, Stack
 } from '@mui/material';
 // Agrega estos imports al inicio del archivo
 import Chip from '@mui/material/Chip';
@@ -36,6 +36,7 @@ import EventIcon from '@mui/icons-material/Event';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { id } from 'date-fns/locale';
+
 
 const Obra = () => {
     const { obraId } = useParams();
@@ -72,8 +73,8 @@ const Obra = () => {
     ];
     const fetchData = async () => {
         try {
-            const resp = await axios.get(
-                `http://146.190.115.47:8090/badema/api/obra/id/${obraId}`,
+            const resp = await axiosInstance.get(
+                `/badema/api/obra/id/${obraId}`,
                 { headers: { Authorization: authHeader } }
             );
             const data = resp.data;
@@ -165,54 +166,8 @@ const Obra = () => {
 
         ],
         ordenesDeCompra: [
-            {
-                id: 1,
-                nombre: 'Orden de compra #1',
-                fechaCreacion: '2023-06-15',
-                estado: 'Finalizada',
-            },
-            {
-                id: 2,
-                nombre: 'Orden de compra #2',
-                fechaCreacion: '2023-06-18',
-                estado: 'Realizada',
-            },
-            {
-                id: 3,
-                nombre: 'Orden de compra #3',
-                fechaCreacion: '2023-06-20',
-                estado: 'Cancelada',
-            },
         ],
         materialesFaltantes: [
-            {
-                id: 7,
-                grupo: 'Sistema eléctrico',
-                cantidad: 1,
-                fechaCreacion: '2023-07-01',
-                estado: 'Finalizada',
-                fechaLlegadaEstimada: '2023-07-15',
-                responsable: 'Juan Pérez'
-            },
-            {
-                id: 8,
-                grupo: 'Ascensores',
-                cantidad: 2,
-                fechaCreacion: '2023-07-05',
-                estado: 'Rechazada',
-                motivoRechazo: 'No se cumplieron las especificaciones técnicas',
-                fechaLlegadaEstimada: '2023-07-20',
-                responsable: 'María Gómez'
-            },
-            {
-                id: 9,
-                grupo: 'Sistema de climatización',
-                cantidad: 1,
-                fechaCreacion: '2023-07-10',
-                estado: 'Pendiente',
-                fechaLlegadaEstimada: '2023-07-25',
-                responsable: 'Carlos Rodríguez'
-            },
         ]
     });
 
@@ -293,14 +248,15 @@ const handleAddHito = async () => {
     const idHito = Math.floor(Math.random() * 1000000);
     const fechaISO = nuevoHito.fecha.toISOString().split("T")[0];
 
-    const url = `http://146.190.115.47:8090/badema/api/hito/agregar?nombreHito=${encodeURIComponent(
-      nuevoHito.nombre
+    const url = `/badema/api/hito/agregar?nombreHito=${encodeURIComponent(
+    nuevoHito.nombre
     )}&fecha=${fechaISO}`;
 
     console.log("URL final:", url);
 
-    try {
-      await axios.put(url, {}, { headers: { Authorization: authHeader } });
+    try { 
+      const resp = await axiosInstance.put(url, {}, { headers: { Authorization: authHeader } });
+      console.log(resp)
       setRefreshObras((prev) => !prev);
       handleCloseHitoDialog();
     } catch (err) {
@@ -382,7 +338,7 @@ const handleAddHito = async () => {
     const handleAddAsociado = async () => {
         try {
             console.log('Nuevo asociado:', { ...nuevoAsociado, idObra: parseInt(obraId, 10) });
-            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/asociado/guardar/${obraId}`, { ...nuevoAsociado, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
+            const resp = await axiosInstance.post(`/badema/api/asociado/guardar/${obraId}`, { ...nuevoAsociado, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
             console.log(resp.data);
             setOpenAsociadoDialog(false);
             setRefreshObras(prev => !prev);
@@ -395,7 +351,7 @@ const handleAddHito = async () => {
     const handleAddSubcontrato = async () => {
         try {
             console.log('Nuevo subcontrato:', { ...nuevoSubcontrato, idObra: parseInt(obraId, 10) });
-            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/subcontrato/guardar/${obraId}`, { ...nuevoSubcontrato, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
+            const resp = await axiosInstance.post(`/badema/api/subcontrato/guardar/${obraId}`, { ...nuevoSubcontrato, obraId: parseInt(obraId, 10) }, { headers: { Authorization: authHeader } });
             console.log(resp.data);
             setOpenSubcontratoDialog(false);
             setRefreshObras(prev => !prev);
@@ -407,8 +363,8 @@ const handleAddHito = async () => {
     const handleOpenAdminDialog = async () => {
         setOpenAdminDialog(true);
         try {
-            const response = await axios.get(
-                `http://146.190.115.47:8090/badema/api/administrativo/obra/${obraId}`,
+            const response = await axiosInstance.get(
+                `/badema/api/administrativo/obra/${obraId}`,
                 { headers: { Authorization: authHeader } }
             );
             setUsuariosDisponibles(response.data);
@@ -424,7 +380,7 @@ const handleAddHito = async () => {
                 rol: nuevoAdmin.rol
             };
 
-            const resp = await axios.post(`http://146.190.115.47:8090/badema/api/administrativo/save`, payload, {
+            const resp = await axiosInstance.post(`/badema/api/administrativo/save`, payload, {
                 headers: { Authorization: authHeader }
             });
             console.log("Administrativo guardado:", resp.data);
@@ -516,7 +472,7 @@ const handleAddHito = async () => {
                                     })}
                                 >
                                     <Avatar sx={{ bgcolor: 'primary.main' }}>
-                                        {admin.nombre}
+                                        {admin.nombre.charAt(0).toUpperCase() + admin.apellidos.charAt(0)}
                                     </Avatar>
                                     <Box>
                                         <Typography variant="subtitle2">
@@ -563,7 +519,7 @@ const handleAddHito = async () => {
                                     })}
                                 >
                                     <Avatar sx={{ bgcolor: 'secondary.main' }}>
-                                        {asociado.nombre}
+                                        {asociado.nombre.charAt(0)+ asociado.apellidos.charAt(0)}
                                     </Avatar>
                                     <Box>
                                         <Typography variant="subtitle2">

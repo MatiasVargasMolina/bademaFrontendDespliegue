@@ -49,7 +49,7 @@ import Home from '@mui/icons-material/Home';
 import Payment from '@mui/icons-material/Payment';
 import Block from '@mui/icons-material/Block';
 import Delete from '@mui/icons-material/Delete';
-import axios from 'axios';
+import axiosInstance from "../axiosConfig/";
 const Adquisiciones = () => {
     const { obraId } = useParams();
     const navigate = useNavigate();
@@ -88,9 +88,29 @@ const Adquisiciones = () => {
     const [proveedorAsociadoSelected, setProveedorAsociadoSelected] = useState(null);
     const [openAddProveedorDialog, setOpenAddProveedorDialog] = useState(false);
     const [refreshPage, setRefreshPage] = useState(false);
+    const [especKey, setEspecKey] = useState('');
+    const [especValor, setEspecValor] = useState('');
+    const [especComentario, setEspecComentario] = useState('');
+    const [nuevasEspecificaciones, setNuevasEspecificaciones] = useState({});
+    const [openEspecDialog, setOpenEspecDialog] = useState(false);
+
+    const handleAgregarEspecificacion = () => {
+        if (!especKey.trim() || !especValor.trim()) return;
+        setNuevasEspecificaciones(prev => ({
+            ...prev,
+            [especKey.trim()]: {
+                valor: especValor.trim(),
+                comentario: especComentario.trim()
+            }
+        }));
+        setEspecKey('');
+        setEspecValor('');
+        setEspecComentario('');
+    };
+
     const handleDesenlazarProveedor = () => {
         console.log('Desenlazando proveedor:', proveedorAsociadoSelected, 'de material:', selectedMaterial);
-        const resp = axios.delete(`http://146.190.115.47:8090/badema/api/proveedormaterial/eliminar/${proveedorAsociadoSelected.idProveedor}/${proveedorAsociadoSelected.idMaterial}`, {
+        const resp = axiosInstance.delete(`/badema/api/proveedormaterial/eliminar/${proveedorAsociadoSelected.idProveedor}/${proveedorAsociadoSelected.idMaterial}`, {
             headers: {
                 Authorization: authHeader
             }
@@ -113,7 +133,7 @@ const Adquisiciones = () => {
     });
     const fetchDetallesProveedor = async (proveedorId) => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/proveedor/id/${proveedorId}`, {
+            const response = await axiosInstance.get(`/badema/api/proveedor/id/${proveedorId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -121,7 +141,7 @@ const Adquisiciones = () => {
             console.log('Detalles del proveedor fetched:', response.data);
             setDetallesProveedor(response.data);
             setProveedorToShow(response.data);
-            setOpenProveedorDialog(true); 
+            setOpenProveedorDialog(true);
             handleShowProveedorDetails(proveedorAsociadoSelected.idProveedor)
         } catch (error) {
             console.error('Error fetching proveedor details:', error);
@@ -133,97 +153,34 @@ const Adquisiciones = () => {
         severity: 'info'
     });
     const handleAddProveedor = () => {
-        const resp = axios.post(`http://146.190.115.47:8090/badema/api/proveedor/guardar`, newProveedor, {
+        const resp = axiosInstance.post(`badema/api/proveedor/guardar`, newProveedor, {
             headers: {
                 Authorization: authHeader
             }
         }
         );
         console.log('Proveedor added:', resp.data);
-        setRefreshPage(!refreshPage);
+        setNewProveedor({
+            nombreProveedor: '',
+            rutProveedor: '',
+            telefonoProveedor: '',
+            direccionProveedor: '',
+            nombreVendedor: '',
+            telefonoVendedor: '',
+            emailVendedor: '',
+            condiciones: '',
+            restricciones: '',
+            comentarios: ''
+        });
+        setRefreshPage((prev) => !prev);
     };
     // Datos de ejemplo para pedidos
     const [pedidos, setPedidos] = useState([
-        {
-            id: 1,
-            nombre: 'Pedido Estructura Principal',
-            solicitadoPor: 'Juan Pérez',
-            fechaEsperada: '15/07/2023',
-            materiales: [
-                {
-                    id: 1,
-                    nombre: 'Tablones de roble 2x4',
-                    proveedores: [1, 2, 3],
-                },
-                {
-                    id: 2,
-                    nombre: 'Clavos galvanizados 3"',
-                    proveedores: [4],
-                },
-                {
-                    id: 3,
-                    nombre: 'Tornillos para madera #8',
-                    proveedores: [5],
-                },
-                {
-                    id: 4,
-                    nombre: 'Lijas #120',
-                    proveedores: [6, 7, 8, 9],
-                },
-                {
-                    id: 5,
-                    nombre: 'Pintura blanca mate',
-                    proveedores: [],
-                }
-            ]
-        },
-        {
-            id: 2,
-            nombre: 'Pedido Acabados',
-            solicitadoPor: 'María Gómez',
-            fechaEsperada: '20/07/2023',
-            materiales: [
-                {
-                    id: 6,
-                    nombre: 'Barniz transparente',
-                    proveedores: [10, 11],
-                },
-                {
-                    id: 7,
-                    nombre: 'Masilla para madera',
-                    proveedores: [12],
-                },
-                {
-                    id: 8,
-                    nombre: 'Láminas de triplay 1/2"',
-                    proveedores: [13, 14, 15],
-                }
-            ]
-        }
+        
     ]);
 
     // Datos de ejemplo para proveedores
     const [proveedores, setProveedores] = useState([
-        {
-            id: 1,
-            nombre: 'Maderera El Bosque',
-            rut: '12.345.678-9',
-            telefono: '987654321',
-            direccion: 'Av. Los Árboles 123, Lima',
-            nombreVendedor: 'Carlos Rojas',
-            rutVendedor: '9.876.543-2',
-            telefonoVendedor: '987111222',
-            emailVendedor: 'crojas@madereraelbosque.com',
-            condicionPago: 'Crédito a 30 días',
-            precioUnidad: 150.50,
-            restricciones: 'Mínimo de compra 300 unidades',
-            especificaciones: [
-                { tipo: 'Madera', valor: 'Roble estándar' },
-                { tipo: 'Dimensiones', valor: '1.9x3.9 pulgadas' },
-                { tipo: 'Problema admitido', valor: 'Puede contener pequeños nudos' }
-            ],
-            verificaciones: [false, false, false]
-        },
         // ... (otros proveedores se mantienen igual)
     ]);
 
@@ -324,7 +281,7 @@ const Adquisiciones = () => {
 
     const handleShowProveedorDetails = (proveedorId) => {
         const proveedor = proveedores.find(p => p.id === proveedorId);
-        const resp= axios.get(`http://146.190.115.47:8090/badema/api/proveedor/id/${proveedorId}`, {
+        const resp = axiosInstance.get(`/badema/api/proveedor/id/${proveedorId}`, {
             headers: {
                 Authorization: authHeader
             }
@@ -336,7 +293,7 @@ const Adquisiciones = () => {
     };
     const fetchPedidos = async () => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/pedido/pedidos/adquisiciones/${obraId}`, {
+            const response = await axiosInstance.get(`/badema/api/pedido/pedidos/adquisiciones/${obraId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -349,7 +306,7 @@ const Adquisiciones = () => {
     }
     const fetchProveedores = async () => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/proveedor/proveedores`, {
+            const response = await axiosInstance.get(`/badema/api/proveedor/proveedores`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -362,7 +319,7 @@ const Adquisiciones = () => {
     };
     const fetchProveedoresAsociados = async (materialId) => {
         try {
-            const response = await axios.get(`http://146.190.115.47:8090/badema/api/proveedormaterial/materialproveedor/${materialId}`, {
+            const response = await axiosInstance.get(`/badema/api/proveedormaterial/materialproveedor/${materialId}`, {
                 headers: {
                     Authorization: authHeader
                 },
@@ -382,15 +339,59 @@ const Adquisiciones = () => {
 
 
 
-    const handleLinkProveedor = async (proveedorId) => {
-        console.log({ idMaterial: selectedMaterial.id, nombreMaterial: selectedMaterial.nombre, idProveedor: selectedProveedor.id, nombreProveedor: selectedProveedor.nombreProveedor, precio: precio, comentarios: comentariosTemp })
+const handleLinkProveedor = async () => {
+  if (!selectedMaterial || !selectedProveedor) return;
 
-        const resp = await axios.post(`http://146.190.115.47:8090/badema/api/proveedormaterial/guardar/${selectedProveedor.id}/${selectedMaterial.id}`, { idMaterial: selectedMaterial.id, nombreMaterial: selectedMaterial.nombre, idProveedor: selectedProveedor.id, nombreProveedor: selectedProveedor.nombreProveedor, precio: precio, comentarios: comentariosTemp }, {
-            headers: {
-                Authorization: authHeader
-            },
-        });            ;
-    };
+  const pvo = {
+    idMaterial: selectedMaterial.id,
+    nombreMaterial: selectedMaterial.nombre,
+    idProveedor: selectedProveedor.id,
+    nombreProveedor: selectedProveedor.nombreProveedor,
+    precio: parseInt(precio),
+    comentarios: comentariosTemp
+  };
+
+  // transformar las nuevas especificaciones a lo que espera el backend
+  const nuevasEspecificacionesDocument = Object.fromEntries(
+    Object.entries(nuevasEspecificaciones).map(([key, { valor }]) => [
+      key,
+      {
+        valor: valor,
+        vigente: true
+      }
+    ])
+  );
+
+  console.log("Cuerpo que se enviará al backend:", {
+    pvo,
+    nuevasEspecificacionesDocument
+  });
+
+  try {
+    await axiosInstance.post(
+      `/badema/api/proveedormaterial/guardar/${selectedProveedor.id}/${selectedMaterial.id}`,
+      {
+        pvo,
+        nuevasEspecificacionesDocument
+      },
+      { headers: { Authorization: authHeader } }
+    );
+    setNuevasEspecificaciones({});
+    setSnackbar({
+      open: true,
+      message: "Proveedor enlazado correctamente",
+      severity: "success"
+    });
+    setRefreshPage(prev => !prev);
+  } catch (error) {
+    console.error("Error enlazando proveedor material:", error);
+    setSnackbar({
+      open: true,
+      message: "Error al enlazar proveedor",
+      severity: "error"
+    });
+  }
+};
 
     const getProveedoresMaterial = (material) => {
         if (!material || !material.proveedores) return [];
@@ -921,6 +922,7 @@ const Adquisiciones = () => {
                                                             variant="outlined"
                                                             size="small"
                                                             onClick={() => {
+                                                                setOpenEspecDialog(true);
                                                                 const updatedProveedores = proveedores.map(p => {
                                                                     if (p.id === selectedProveedor) {
                                                                         return {
@@ -935,7 +937,52 @@ const Adquisiciones = () => {
                                                         >
                                                             Agregar especificación
                                                         </Button>
+                                                        {/* El diálogo con el formulario */}
+                                                        <Dialog
+                                                            open={openEspecDialog}
+                                                            onClose={() => setOpenEspecDialog(false)}
+                                                        >
+                                                            <DialogTitle>Nueva Especificación</DialogTitle>
+                                                            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 300 }}>
+                                                                <TextField
+                                                                    label="Nombre especificación"
+                                                                    value={especKey}
+                                                                    onChange={e => setEspecKey(e.target.value)}
+                                                                    autoFocus
+                                                                />
+                                                                <TextField
+                                                                    label="Valor"
+                                                                    value={especValor}
+                                                                    onChange={e => setEspecValor(e.target.value)}
+                                                                />
+                                                            </DialogContent>
+                                                            <DialogActions>
+                                                                <Button onClick={() => setOpenEspecDialog(false)}>
+                                                                    Cancelar
+                                                                </Button>
+                                                                <Button
+                                                                    variant="contained"
+                                                                    onClick={() => {
+                                                                        handleAgregarEspecificacion();
+                                                                        setOpenEspecDialog(false);
+                                                                    }}
+                                                                >
+                                                                    Agregar
+                                                                </Button>
+                                                            </DialogActions>
+                                                        </Dialog>
 
+                                                        {/* Lista de especificaciones ya agregadas */}
+                                                        <List>
+                                                            {Object.entries(nuevasEspecificaciones).map(([key, { valor, comentario }]) => (
+                                                                <ListItem key={key}>
+                                                                    <ListItemText
+                                                                        primary={`${key}: ${valor}`}
+                                                                        secondary={comentario || '—'}
+                                                                    />
+                                                                </ListItem>
+                                                            ))}
+                                                        </List>
                                                         <Button
                                                             variant="outlined"
                                                             size="small"
@@ -951,7 +998,7 @@ const Adquisiciones = () => {
                                                         <Button
                                                             variant="contained"
                                                             startIcon={<Link />}
-                                                            onClick={async() => {
+                                                            onClick={async () => {
                                                                 handleLinkProveedor(selectedProveedor);
                                                                 setRefreshPage(prev => !prev); // Forzar actualización de la página
                                                             }}
@@ -1042,7 +1089,7 @@ const Adquisiciones = () => {
                         />
 
                         <Box sx={{ flex: 1, mb: 2, overflow: 'auto' }}>
-                            <Grid container spacing={2}>
+                            <Grid container spacing={2} direction="column">
                                 {proveedores.map((proveedor) => (
                                     <Grid item key={proveedor.id} xs={12}>
                                         <Paper
@@ -1053,13 +1100,18 @@ const Adquisiciones = () => {
                                                 p: 2,
                                                 borderRadius: 2,
                                                 border: '1px solid',
-                                                borderColor: selectedProveedor === proveedor.id ?
+                                                borderColor: selectedProveedor?.id === proveedor.id ?  // Cambia esta línea
                                                     theme.palette.primary.main : 'divider',
                                                 transition: 'transform 0.2s',
                                                 '&:hover': {
                                                     transform: 'translateY(-4px)',
                                                     boxShadow: 4
-                                                }
+                                                },
+                                                // Agrega estas nuevas propiedades:
+                                                boxShadow: selectedProveedor?.id === proveedor.id ?
+                                                    `0 0 0 2px ${theme.palette.primary.main}` : 'none',
+                                                backgroundColor: selectedProveedor?.id === proveedor.id ?
+                                                    theme.palette.action.selected : 'inherit'
                                             }}
                                             onClick={() => {
                                                 setSelectedProveedor(proveedor);
@@ -1073,7 +1125,7 @@ const Adquisiciones = () => {
                                                     bgcolor: 'primary.main',
                                                     mr: 2
                                                 }}>
-                                                    {proveedor.nombreProveedor}
+                                                    {proveedor.nombreProveedor.charAt(0).toUpperCase()}
                                                 </Avatar>
                                                 <Box>
                                                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
@@ -1147,7 +1199,7 @@ const Adquisiciones = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleCloseProveedorMenu}
             >
-                <MenuItem onClick={() => {fetchDetallesProveedor(proveedorAsociadoSelected.idProveedor);setRefreshPage((prev) => !prev) ;  }}>
+                <MenuItem onClick={() => { fetchDetallesProveedor(proveedorAsociadoSelected.idProveedor); setRefreshPage((prev) => !prev); }}>
                     <ListItemIcon>
                         <Info fontSize="small" />
                     </ListItemIcon>
@@ -1236,6 +1288,8 @@ const Adquisiciones = () => {
                         Regresar
                     </Button>
                 </Box>
+                
+                
             </Box>
             <Snackbar
                 open={snackbar.open}

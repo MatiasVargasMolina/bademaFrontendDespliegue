@@ -20,7 +20,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import MenuIcon from '@mui/icons-material/Menu';
 import { Drawer } from '@mui/material';
-import axios from 'axios';
+import axiosInstance from '../axiosConfig';
 const Navbar = ({ toggleDarkMode, darkMode }) => {
     const [helpAnchor, setHelpAnchor] = useState(null);
     const [settingsAnchor, setSettingsAnchor] = useState(null); // Estado para el popover de configuración
@@ -74,7 +74,7 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
 const token = localStorage.getItem("_auth");
 
     const handleLogout = async () => {
-        axios.post("http://146.190.115.47:8090/auth/logout", null, {
+        axiosInstance.post("/auth/logout", null, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -283,7 +283,7 @@ const token = localStorage.getItem("_auth");
                             {/* Botón de toggle para modo oscuro */}
                             <IconButton
                                 onClick={toggleDarkMode}
-                                color="inherit"
+                                color="primary"
                                 sx={{ ml: 1 }}
                             >
                                 {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}

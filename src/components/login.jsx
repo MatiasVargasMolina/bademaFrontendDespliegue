@@ -11,12 +11,12 @@ import {
 import BademaLogo from '../images/BademaLogo.png';
 import BademaLogoBlack from '../images/BademaBlack.png';
 import { Lock as LockIcon } from '@mui/icons-material';
-import axios from 'axios';
 // Import correcto del hook useSignIn
 import useSignIn from 'react-auth-kit/hooks/useSignIn';
 import { useNavigate } from 'react-router-dom';
 import { MuiTelInput } from 'mui-tel-input';
-const API = 'http://146.190.115.47:8090/auth';
+import axiosInstance from '../axiosConfig';
+
 
 const Login = ({ darkMode }) => {
   const navigate = useNavigate();
@@ -99,9 +99,10 @@ const Login = ({ darkMode }) => {
           nombre: form.nombre,
           apellido: form.apellido,
           correo: form.email,
-          contrasena: form.password
+          contrasena: form.password,
+          telefono: form.telefono
         };
-        const response = await axios.post(`${API}/register`, payload, { withCredentials: true });
+        const response = await axiosInstance.post(`/auth/register`, payload, { withCredentials: true });
         console.log(response);
         if (response.status == 200) {
           setIsRegisterMode(false);
@@ -110,7 +111,7 @@ const Login = ({ darkMode }) => {
         const payload = { correo: form.email, contrasena: form.password };
 
         console.log(payload);
-        const response = await axios.post(`${API}/login`, payload, { withCredentials: true });
+        const response = await axiosInstance.post(`/auth/login`, payload, { withCredentials: true });
         console.log(response);
         const bearer = response.headers['authorization'] || response.headers['Authorization'];
         const token = bearer?.split(' ')[1] || response.data.token;
