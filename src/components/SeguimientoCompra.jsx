@@ -507,20 +507,7 @@ const SeguimientoOrdenesCompra = () => {
                                                 sx={{ flex: 1 }}
                                             />
 
-                                            {/* Botón para cancelar orden si está realizada - Versión compacta */}
-                                            {getEstadoOrden(orden) === 'realizada' && (
-                                                <IconButton
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedOrden(orden);
-                                                        setOpenCancelarDialog(true);
-                                                    }}
-                                                    color="error"
-                                                    sx={{ mr: 1 }}
-                                                >
-                                                    <Cancel />
-                                                </IconButton>
-                                            )}
+                                            
 
                                             <IconButton>
                                                 {expandedOrden === orden.id ? <ExpandLess /> : <ExpandMore />}
@@ -668,7 +655,7 @@ const SeguimientoOrdenesCompra = () => {
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                             <LocalShipping sx={{ mr: 1, color: 'primary.main' }} />
                                             <Typography sx={{ flex: 1 }}>
-                                                Entregado: {detallesItem?.cantidadEntregada} / {detallesItem?.cantidadOrdenada} unidades
+                                                Recibido: {detallesItem?.cantidadEntregada} / {detallesItem?.cantidadOrdenada} unidades
                                             </Typography>
                                             <TextField
                                                 type="number"
@@ -699,7 +686,7 @@ const SeguimientoOrdenesCompra = () => {
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                             <Construction sx={{ mr: 1, color: 'secondary.main' }} />
                                             <Typography sx={{ flex: 1 }}>
-                                                Instalado: {detallesItem?.cantidadInstalada} / {detallesItem?.cantidadOrdenada} unidades
+                                                Entregado: {detallesItem?.cantidadInstalada} / {detallesItem?.cantidadOrdenada} unidades
                                             </Typography>
                                             <TextField
                                                 type="number"

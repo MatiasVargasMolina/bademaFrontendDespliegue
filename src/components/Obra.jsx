@@ -132,7 +132,7 @@ const Obra = () => {
                         ? [data.hitos]
                         : [],
 
-                ordenesDeCompra: prev.ordenesDeCompra,
+                ordenesDeCompra: data.ordenesCompra,
                 materialesFaltantes: [
   ...(data.pedidosATrabajar?.map(p => ({
     id: p.id,
@@ -322,7 +322,7 @@ const handleAddHito = async () => {
 
     // Resto de handlers
     const handleVerEE = () => {
-        navigate('/lectorArchivos/1');
+        navigate('/lectorArchivos?obraId=' + obraId);
     };
 
     const handleVerTraza = () => {
@@ -566,7 +566,7 @@ const handleAddHito = async () => {
                                     })}
                                 >
                                     <Avatar sx={{ bgcolor: 'success.main' }}>
-                                        {subcontrato.nombre + ' ' + subcontrato.apellidos}
+                                        {subcontrato.nombre.charAt(0) + subcontrato.apellidos.charAt(0)}
                                     </Avatar>
                                     <Box>
                                         <Typography variant="subtitle2">
@@ -975,7 +975,7 @@ const handleAddHito = async () => {
                             <List sx={{ flex: 1, overflow: 'auto', width: '100%' }}>
                                 {ordenesDeCompraPaginados.slice(0, 3).map((orden) => (
                                     <ListItem
-                                        key={`orden-${orden.id}`}
+                                        key={`orden-${orden.numeroOrden}`}
                                         secondaryAction={
                                             <Box sx={{
                                                 display: 'flex',
@@ -985,7 +985,7 @@ const handleAddHito = async () => {
                                                 minWidth: '240px'
                                             }}>
                                                 {/* Botón de seguimiento solo para estados específicos */}
-                                                {(orden.estado === 'Realizada' || orden.estado === 'Finalizada') && (
+                                                {(orden.estado === 0 || orden.estado === 1) && (
                                                     <Button
                                                         variant="outlined"
                                                         onClick={() => navigate(`/seguimientoCompra/${id}`)}
@@ -1057,7 +1057,7 @@ const handleAddHito = async () => {
                                                 textOverflow: 'ellipsis',
                                                 lineHeight: 1.2
                                             }}>
-                                                {orden.nombre}
+                                                {orden.numeroOrden}
                                             </Typography>
 
                                             {/* Fecha y estado en la misma línea */}
@@ -1067,7 +1067,7 @@ const handleAddHito = async () => {
                                                 gap: 1
                                             }}>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    Creada: {new Date(orden.fechaCreacion).toLocaleDateString('es-ES')}
+                                                    Creada: {new Date(orden.fechaEmision).toLocaleDateString('es-ES')}
                                                 </Typography>
 
                                                 {/* Estado al lado de la fecha */}
@@ -1189,18 +1189,35 @@ const handleAddHito = async () => {
                                 <Typography variant="subtitle1" gutterBottom>
                                     Nombre: {detallesPersona.nombre} {detallesPersona.apellidos}
                                 </Typography>
-                                <Typography variant="body1" gutterBottom>
-                                    Área de trabajo: {detallesPersona.areaTrabajo}
-                                </Typography>
+                    
 
                                 {detallesPersona.tipo === 'Administrativo' && (
-                                    <Typography variant="body1">
-                                        Fecha asignación: {detallesPersona.fechaAsignacion}
+                                    
+                                    <Typography variant="body1" gutterBottom>
+                                    Área de trabajo: {detallesPersona.areaTrabajo}
                                     </Typography>
+                                    
                                 )}
 
-                                {(detallesPersona.tipo === 'Asociado' || detallesPersona.tipo === 'Subcontrato') && (
-                                    <>
+                                {(detallesPersona.tipo === 'Asociado') && (
+                                        <><Typography variant="body1" gutterBottom>
+                                        Área de trabajo: {(detallesPersona.areaTrabajo === 1) ? "Bodega" : "Jefe de obra"}
+                                        </Typography>
+                                        <Typography variant="body1" gutterBottom>
+                                            RUT: {detallesPersona.rut}
+                                        </Typography>
+                                        <Typography variant="body1" gutterBottom>
+                                            Email: {detallesPersona.email}
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            Teléfono: {detallesPersona.telefono}
+                                        </Typography>
+                                    </>
+                                )}
+                                {(detallesPersona.tipo === 'Subcontrato') && (
+                                        <><Typography variant="body1" gutterBottom>
+                                        Área de trabajo: {detallesPersona.areaTrabajo}
+                                        </Typography>
                                         <Typography variant="body1" gutterBottom>
                                             RUT: {detallesPersona.rut}
                                         </Typography>

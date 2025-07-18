@@ -916,7 +916,23 @@ const handleLinkProveedor = async () => {
                                                             </Typography>
                                                         </Box>
                                                     )}
-
+        <List>
+                                                            {Object.entries(nuevasEspecificaciones).map(([key, { valor, comentario }]) => (
+                                                                <ListItem key={key}>
+                                                                    <Chip
+                                                                        label={key+" :"}
+                                                                        color="primary"
+                                                                        size="small"
+                                                                    />
+                                                                    <Chip
+                                                                    sx={{ ml: 2 }}
+                                                                        label={valor}
+                                                                        color="secundary"
+                                                                        size="small"
+                                                                    />
+                                                                </ListItem>
+                                                            ))}
+                                                        </List>
                                                     <Stack direction="row" spacing={2} alignItems="center">
                                                         <Button
                                                             variant="outlined"
@@ -937,6 +953,7 @@ const handleLinkProveedor = async () => {
                                                         >
                                                             Agregar especificación
                                                         </Button>
+                                                        
                                                         {/* El diálogo con el formulario */}
                                                         <Dialog
                                                             open={openEspecDialog}
@@ -971,18 +988,9 @@ const handleLinkProveedor = async () => {
                                                                 </Button>
                                                             </DialogActions>
                                                         </Dialog>
-
+                                                          
                                                         {/* Lista de especificaciones ya agregadas */}
-                                                        <List>
-                                                            {Object.entries(nuevasEspecificaciones).map(([key, { valor, comentario }]) => (
-                                                                <ListItem key={key}>
-                                                                    <ListItemText
-                                                                        primary={`${key}: ${valor}`}
-                                                                        secondary={comentario || '—'}
-                                                                    />
-                                                                </ListItem>
-                                                            ))}
-                                                        </List>
+                                                        
                                                         <Button
                                                             variant="outlined"
                                                             size="small"

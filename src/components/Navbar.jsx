@@ -240,7 +240,7 @@ const token = localStorage.getItem("_auth");
                                             }
                                         }}
                                     >
-                                        Manejando Adquisiciones
+                                        Generar OC
                                     </Button>
 
                                     <Button

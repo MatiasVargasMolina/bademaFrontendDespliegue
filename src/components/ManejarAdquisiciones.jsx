@@ -553,7 +553,7 @@ const userId = authState?.userId;
                 {/* Título con subtítulo */}
                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                     <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-                        Manejando Adquisiciones
+                        Generar Órden de Compra
                     </Typography>
                     <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
                         Proveedor: {selectedProvider.nombreProveedor}
@@ -815,8 +815,7 @@ const userId = authState?.userId;
                     {/* Título */}
                     <Box sx={{ textAlign: 'center', mb: 4 }}>
                         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-                            Manejando Adquisiciones
-                        </Typography>
+Generar Órden de Compra                        </Typography>
                     </Box>
 
                     {/* Tarjetas principales */}
